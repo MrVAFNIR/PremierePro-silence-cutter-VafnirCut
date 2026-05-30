@@ -3,7 +3,6 @@
 # ✂️ VafnirCut — Automated Silence Cutter for Premiere Pro
 
 <div align="center">
-  <h1>VafnirCut — Interface</h1>
   
   <img src="interface.png" alt="VafnirCut Interface" width="450">
   
