@@ -1,6 +1,6 @@
 **English** | [Русский](README.ru.md)
 
-# ✂️ VafnirCut — Automated Silence Cutter for PremierePro
+# ✂️ VafnirCut — Automated Silence Cutter for Premiere Pro
 
 <div align="center">
   
