@@ -1,0 +1,622 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>VafnirCut</title>
+    <style>
+        :root {
+            --bg-color: #090c09; 
+            --panel-bg: rgba(18, 24, 18, 0.85); 
+            --text-main: #d5d5d5;
+            --text-highlight: #ffffff; 
+            --accent-blue: #2ecc71; 
+            --accent-hover: #27ae60;
+            --border-color: #1b2e1b; 
+            --input-bg: #0c120c;
+            --header-glow: rgba(46, 204, 113, 0.45);
+            --header-gradient: linear-gradient(90deg, #2ecc71, #ffffff, #a3e4d7, #ffffff, #2ecc71);
+        }
+        html, body { 
+            background-color: var(--bg-color); color: var(--text-main); 
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
+            margin: 0; padding: 18px; box-sizing: border-box; 
+            font-size: 14px; user-select: none; 
+            overflow: hidden; 
+            transition: background-color 0.4s ease;
+        }
+        *, *:before, *:after { box-sizing: inherit; }
+
+        #bgCanvas {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            z-index: 0; pointer-events: none;
+            image-rendering: pixelated;
+        }
+
+        /* Блик (отключаем для PRO темы через js) */
+        body::after {
+            content: ""; position: absolute; top: 0; left: -150%; width: 70%; height: 100%;
+            background: linear-gradient(to right, rgba(255,255,255,0) 0%, rgba(255,255,255,0.04) 50%, rgba(255,255,255,0) 100%);
+            transform: skewX(-25deg); animation: glassFlare 12s infinite; pointer-events: none; z-index: 9999;
+            transition: opacity 0.4s ease;
+        }
+        body.theme-pro::after { opacity: 0; animation: none; }
+        @keyframes glassFlare { 0% { left: -150%; } 15% { left: 200%; } 100% { left: 200%; } }
+
+        .ui-container { position: relative; z-index: 10; }
+
+        .header-container { 
+            text-align: center; margin-bottom: 24px; position: relative; 
+            display: flex; justify-content: center; align-items: center;
+        }
+        
+        .header {
+            position: relative; font-size: 28px; font-weight: 900; text-transform: uppercase; 
+            letter-spacing: 5px; cursor: pointer;
+            background: var(--header-gradient); background-size: 200% auto;
+            color: transparent; -webkit-background-clip: text; background-clip: text;
+            animation: pearlRainbow 4s linear infinite;
+            filter: drop-shadow(0px 0px 10px var(--header-glow));
+            transition: filter 0.4s ease, transform 0.2s ease;
+        }
+        .header:hover {
+            transform: scale(1.03); filter: drop-shadow(0px 0px 16px var(--header-glow)) brightness(1.1);
+        }
+        @keyframes pearlRainbow { to { background-position: 200% center; } }
+
+        .control-group { 
+            background-color: var(--panel-bg); padding: 16px; border-radius: 8px; margin-bottom: 16px; 
+            border: 1px solid var(--border-color); 
+            box-shadow: 0 4px 15px rgba(0,0,0,0.4); 
+            backdrop-filter: blur(4px); transition: background-color 0.4s, border-color 0.4s, box-shadow 0.4s;
+        }
+        /* В PRO-теме делаем панели площе */
+        body.theme-pro .control-group { box-shadow: 0 2px 8px rgba(0,0,0,0.2); }
+
+        .control-group label.title { 
+            display: block; margin-bottom: 12px; color: var(--text-highlight); font-weight: bold; 
+            text-transform: uppercase; font-size: 11px; letter-spacing: 0.5px;
+        }
+
+        .tracks-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(65px, 1fr)); gap: 10px; }
+        .adobe-checkbox { display: flex; align-items: center; cursor: pointer; font-weight: bold; position: relative;}
+        .adobe-checkbox input { position: absolute; opacity: 0; }
+        
+        .checkmark { 
+            height: 16px; width: 16px; background-color: var(--input-bg); border: 1px solid var(--border-color); 
+            border-radius: 4px; margin-right: 8px; display: flex; align-items: center; justify-content: center; 
+            transition: background-color 0.2s, border-color 0.2s, box-shadow 0.2s;
+        }
+        .adobe-checkbox input:checked ~ .checkmark { 
+            background-color: var(--accent-blue); border-color: var(--accent-blue); box-shadow: 0 0 8px var(--header-glow); 
+        }
+        body.theme-pro .adobe-checkbox input:checked ~ .checkmark { box-shadow: none; }
+
+        .checkmark:after { 
+            content: ""; display: none; width: 4px; height: 9px; border: solid #fff; 
+            border-width: 0 2px 2px 0; transform: rotate(45deg); margin-bottom: 2px; 
+        }
+        .adobe-checkbox input:checked ~ .checkmark:after { display: block; }
+
+        .slider-container { margin-top: 14px; }
+        .slider-container:first-child { margin-top: 0; }
+        .slider-header { display: flex; justify-content: space-between; margin-bottom: 8px; color: var(--text-highlight); font-size: 13px; font-weight: 600; }
+        .slider-header span { color: var(--accent-blue); font-family: monospace; font-weight: bold; transition: color 0.4s; }
+        
+        input[type="range"] { -webkit-appearance: none; width: 100%; background: transparent; }
+        input[type="range"]::-webkit-slider-runnable-track { width: 100%; height: 4px; background: var(--input-bg); border-radius: 2px; }
+        input[type="range"]::-webkit-slider-thumb { 
+            height: 14px; width: 14px; border-radius: 50%; background: var(--text-highlight); cursor: pointer; 
+            -webkit-appearance: none; margin-top: -5px; 
+            box-shadow: 0 0 5px rgba(0,0,0,0.5); 
+        }
+
+        button { 
+            width: 100%; background: linear-gradient(180deg, var(--accent-blue), var(--accent-hover)); 
+            color: #fff; border: 1px solid rgba(0,0,0,0.15); padding: 14px; font-size: 15px; font-weight: bold; 
+            border-radius: 6px; cursor: pointer; margin-top: 8px; 
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3); 
+            text-transform: uppercase; letter-spacing: 0.5px; transition: background 0.4s, box-shadow 0.2s;
+        }
+        button:hover { box-shadow: 0 0 15px var(--header-glow); } 
+        body.theme-pro button:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.4); filter: brightness(1.1); }
+
+        #status { 
+            margin-top: 16px; font-size: 12px; font-weight: bold; color: #8c8c8c; padding: 12px; 
+            background-color: var(--input-bg); border: 1px solid var(--border-color); border-radius: 6px; 
+            text-align: center; transition: background-color 0.4s, border-color 0.4s;
+            word-wrap: break-word;
+        }
+    </style>
+    <script src="./CSInterface.js"></script>
+</head>
+<body>
+    <canvas id="bgCanvas"></canvas>
+
+    <div class="ui-container">
+        <div class="header-container">
+            <div class="header" id="headerBtn" data-text="VAFNIRCUT">VAFNIRCUT</div>
+        </div>
+
+        <div class="control-group">
+            <label class="title">Анализируемые аудиоканалы:</label>
+            <div class="tracks-grid">
+                <label class="adobe-checkbox"><input type="checkbox" class="track-ch" value="0" checked><span class="checkmark"></span>A1</label>
+                <label class="adobe-checkbox"><input type="checkbox" class="track-ch" value="1" checked><span class="checkmark"></span>A2</label>
+                <label class="adobe-checkbox"><input type="checkbox" class="track-ch" value="2" checked><span class="checkmark"></span>A3</label>
+                <label class="adobe-checkbox"><input type="checkbox" class="track-ch" value="3"><span class="checkmark"></span>A4</label>
+                <label class="adobe-checkbox"><input type="checkbox" class="track-ch" value="4"><span class="checkmark"></span>A5</label>
+            </div>
+        </div>
+
+        <div class="control-group">
+            <div class="slider-container">
+                <div class="slider-header"><label>Отступ (Margin)</label><span><span id="marginValue">0.2</span> s</span></div>
+                <input type="range" id="marginSlider" min="0" max="1" step="0.1" value="0.2">
+            </div>
+            <div class="slider-container">
+                <div class="slider-header"><label>Порог шума (Threshold)</label><span><span id="thresholdValue">4</span> %</span></div>
+                <input type="range" id="thresholdSlider" min="1" max="50" step="1" value="4">
+            </div>
+        </div>
+
+        <div class="control-group" style="margin-bottom: 8px;">
+            <label class="adobe-checkbox">
+                <input type="checkbox" id="rippleCheck" checked>
+                <span class="checkmark"></span> Удаление со сдвигом (Ripple Delete)
+            </label>
+        </div>
+        
+        <button id="runBtn">ОБРЕЗАТЬ ТАЙМЛАЙН</button>
+        <div id="status">Выдели клип на таймлайне и жми кнопку</div>
+    </div>
+
+    <script>
+        const statusDiv = document.getElementById('status');
+        window.onerror = function(msg, url, line) { if (statusDiv) statusDiv.innerHTML = `<span style='color:#e27a7a'>Сбой: ${msg}</span>`; };
+
+        const marginSlider = document.getElementById('marginSlider'); const thresholdSlider = document.getElementById('thresholdSlider');
+        const marginValue = document.getElementById('marginValue'); const thresholdValue = document.getElementById('thresholdValue');
+        const headerBtn = document.getElementById('headerBtn'); const runBtn = document.getElementById('runBtn');
+        const rippleCheck = document.getElementById('rippleCheck');
+
+        marginSlider.addEventListener('input', () => { marginValue.textContent = marginSlider.value; });
+        thresholdSlider.addEventListener('input', () => { thresholdValue.textContent = thresholdSlider.value; });
+
+        const themes = {
+            forest: { '--bg-color': '#090c09', '--panel-bg': 'rgba(18, 24, 18, 0.85)', '--accent-blue': '#2ecc71', '--accent-hover': '#27ae60', '--border-color': '#1b2e1b', '--input-bg': '#0c120c', '--header-glow': 'rgba(46, 204, 113, 0.45)', '--header-gradient': 'linear-gradient(90deg, #2ecc71, #ffffff, #a3e4d7, #ffffff, #2ecc71)' },
+            ice: { '--bg-color': '#070f14', '--panel-bg': 'rgba(14, 25, 33, 0.85)', '--accent-blue': '#3498db', '--accent-hover': '#2980b9', '--border-color': '#192b3a', '--input-bg': '#0c151c', '--header-glow': 'rgba(52, 152, 219, 0.45)', '--header-gradient': 'linear-gradient(90deg, #3498db, #ffffff, #d6eaf8, #ffffff, #3498db)' },
+            lava: { '--bg-color': '#100705', '--panel-bg': 'rgba(26, 14, 11, 0.85)', '--accent-blue': '#e74c3c', '--accent-hover': '#c0392b', '--border-color': '#331b17', '--input-bg': '#140b08', '--header-glow': 'rgba(231, 76, 60, 0.45)', '--header-gradient': 'linear-gradient(90deg, #e74c3c, #ffffff, #f9e79f, #ffffff, #e74c3c)' },
+            clouds: { '--bg-color': '#0b0811', '--panel-bg': 'rgba(19, 14, 28, 0.85)', '--accent-blue': '#9b59b6', '--accent-hover': '#8e44ad', '--border-color': '#2a1f3c', '--input-bg': '#100c19', '--header-glow': 'rgba(155, 89, 182, 0.45)', '--header-gradient': 'linear-gradient(90deg, #9b59b6, #ffffff, #ebdef0, #ffffff, #9b59b6)' },
+            water: { '--bg-color': '#040d10', '--panel-bg': 'rgba(10, 24, 29, 0.85)', '--accent-blue': '#1abc9c', '--accent-hover': '#16a085', '--border-color': '#153641', '--input-bg': '#061419', '--header-glow': 'rgba(26, 188, 156, 0.45)', '--header-gradient': 'linear-gradient(90deg, #1abc9c, #ffffff, #e8f8f5, #ffffff, #1abc9c)' },
+            earth: { '--bg-color': '#0d0a07', '--panel-bg': 'rgba(24, 19, 14, 0.85)', '--accent-blue': '#d35400', '--accent-hover': '#b03a2e', '--border-color': '#36291d', '--input-bg': '#110d0a', '--header-glow': 'rgba(211, 84, 0, 0.45)', '--header-gradient': 'linear-gradient(90deg, #d35400, #ffffff, #fadbd8, #ffffff, #d35400)' },
+            pro: { '--bg-color': '#1e1e1e', '--panel-bg': '#252525', '--accent-blue': '#2a82da', '--accent-hover': '#3b90e3', '--border-color': '#333333', '--input-bg': '#141414', '--header-glow': 'transparent', '--header-gradient': 'linear-gradient(90deg, #b0b0b0, #ffffff, #b0b0b0)' }
+        };
+
+        const themeKeys = Object.keys(themes);
+        let currentTheme = localStorage.getItem('vafnircut_theme') || 'forest';
+
+        // =========================================================
+        // === ПЕРЕМЕННЫЕ И ФУНКЦИИ ФОНА ===
+        // =========================================================
+        const canvas = document.getElementById('bgCanvas');
+        const ctx = canvas.getContext('2d');
+        let particles = [];
+        let fountainParticles = []; 
+        let activeGeysers = []; 
+        let animationFrameCount = 0;
+        let bgPattern = null; 
+
+        // ⬇️⬇️⬇️ МЕГА-КОНФИГ ГЕЙЗЕРОВ И ИСКР ⬇️⬇️⬇️
+        const sparkCfg = {
+            // --- ОСНОВНЫЕ ПАРАМЕТРЫ ПОЯВЛЕНИЯ ---
+            chance: 0.001,             // Шанс вылета каждый кадр (0.005 = ~раз в 3-4 секунды)
+            durationMin: 20,           // Минимальное время работы струи (в кадрах)
+            durationMax: 180,          // Максимальное время работы струи 
+            sparksPerFrame: 3,         // Густота: количество новых искр КАЖДЫЙ кадр работы
+            spawnYMin: 0.2,            // Появление искр ОТ (0.2 = 20% от верха экрана)
+            spawnYMax: 0.9,            // Появление искр ДО (0.9 = 90% от верха экрана)
+
+            // --- ГЛУБИНА (ЭФФЕКТ БЛИЗКО/ДАЛЕКО) ---
+            opacityMin: 0.1,           // Минимальная базовая прозрачность (тусклые = далеко)
+            opacityMax: 0.7,           // Максимальная базовая прозрачность (яркие = близко)
+            scaleMin: 0.1,             // Множитель размера для эффекта глубины (мелкие = далеко)
+            scaleMax: 1.5,             // Множитель размера для эффекта глубины (крупные = близко)
+
+            // --- РАЗМЕРЫ И ВРЕМЯ ЖИЗНИ ЧАСТИЦ ---
+            sizeMin: 0.5,              // Минимальный базовый размер искры (в пикселях)
+            sizeMax: 3.5,              // Максимальный базовый размер искры
+            lifeMin: 30,               // Минимальное время жизни (сколько кадров проживет)
+            lifeMax: 180,              // Максимальное время жизни 
+
+            // --- ФИЗИКА: ПОЛЕТ И СОПРОТИВЛЕНИЕ ---
+            flyXMin: 1.0,              // Минимальная сила выстрела В ЦЕНТР
+            flyXMax: 3.5,              // Максимальная сила выстрела В ЦЕНТР
+            flyYMin: 1.0,              // Минимальная сила выстрела ВВЕРХ
+            flyYMax: 6.0,              // Максимальная сила выстрела ВВЕРХ
+            dragX: 0.99,               // Торможение по горизонтали 
+            dragY: 0.99,               // Торможение по вертикали 
+            gravity: 0.08,             // Гравитация (сила притяжения вниз)
+            windSway: 0.4,             // Сила покачивания "на ветру" 
+
+            // --- СВЕЧЕНИЕ (GLOW), ЦВЕТ И МЕРЦАНИЕ ---
+            startWhiteAlphaLava: 0.55, // Яркость белого ядра при рождении (для Лавы)
+            startWhiteAlphaIce: 0.0,   // Яркость белого ядра при рождении (для Льда)
+            
+            maxGlowBlur: 10,           // Максимальный радиус свечения (тень)
+            fadeStart: 0.85,           // Порог начала угасания (0.85 = угасает последние 85% жизни)
+            
+            baseGlowAlpha: 1.0,        // Насколько ярко светится цветная искра ПОСЛЕ остывания белого ядра
+            blinkEnabled: false        // Включить эффект мерцания (true/false)
+        };
+        // ⬆️⬆️⬆️ КОНЕЦ НАСТРОЕК ⬆️⬆️⬆️
+
+        function resizeCanvas() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
+        window.addEventListener('resize', resizeCanvas); 
+
+        function generateBackgroundTexture(baseColorHex) {
+            const patternCanvas = document.createElement('canvas');
+            const tileSize = 128; const pixelSize = 16; 
+            patternCanvas.width = tileSize; patternCanvas.height = tileSize;
+            const pCtx = patternCanvas.getContext('2d');
+            pCtx.fillStyle = baseColorHex; pCtx.fillRect(0, 0, tileSize, tileSize);
+            for (let y = 0; y < tileSize; y += pixelSize) {
+                for (let x = 0; x < tileSize; x += pixelSize) {
+                    const rand = Math.random();
+                    if (rand < 0.10) { pCtx.fillStyle = 'rgba(255, 255, 255, 0.005)'; pCtx.fillRect(x, y, pixelSize, pixelSize); } 
+                    else if (rand > 0.75) { pCtx.fillStyle = 'rgba(0, 0, 0, 0.1)'; pCtx.fillRect(x, y, pixelSize, pixelSize); } 
+                    else if (rand > 0.65) { pCtx.fillStyle = 'rgba(0, 0, 0, 0.24)'; pCtx.fillRect(x, y, pixelSize, pixelSize); }
+                }
+            }
+            return ctx.createPattern(patternCanvas, 'repeat');
+        }
+
+        function generateParticle(randomY = false) {
+            const p = {
+                x: Math.random() * canvas.width, y: randomY ? Math.random() * canvas.height : -10,
+                speed: 0.15 + Math.random() * 0.4, size: 2 + Math.floor(Math.random() * 3),
+                glow: false, glowTimer: Math.random() * 100, sinOffset: Math.random() * 10, sinSpeed: 0.005 + Math.random() * 0.01
+            };
+            if (currentTheme === 'lava' || currentTheme === 'water') { p.y = randomY ? Math.random() * canvas.height : canvas.height + 10; p.speed = -(0.15 + Math.random() * 0.35); }
+            if (currentTheme === 'clouds') { p.x = randomY ? Math.random() * canvas.width : -20; p.y = Math.random() * canvas.height; p.speedX = 0.1 + Math.random() * 0.25; }
+            return p;
+        }
+
+        function initParticles() { particles = []; for(let i = 0; i < 35; i++) { particles.push(generateParticle(true)); } }
+
+        function setTheme(themeKey) {
+            currentTheme = themeKey;
+            const theme = themes[themeKey];
+            for (const [key, value] of Object.entries(theme)) { document.documentElement.style.setProperty(key, value); }
+            
+            // Навешиваем класс для скрытия блика в PRO теме
+            if (themeKey === 'pro') document.body.classList.add('theme-pro');
+            else document.body.classList.remove('theme-pro');
+
+            // В ПРО-теме не рисуем текстуру фона (экономим ресурсы)
+            bgPattern = themeKey === 'pro' ? null : generateBackgroundTexture(theme['--bg-color']);
+            
+            initParticles(); 
+            fountainParticles = [];
+            activeGeysers = [];
+            
+            // Демонстрационный залп при выборе темы
+            if (themeKey === 'lava' || themeKey === 'ice') { 
+                let dur = sparkCfg.durationMin + Math.floor(Math.random() * (sparkCfg.durationMax - sparkCfg.durationMin));
+                let startY = window.innerHeight * (sparkCfg.spawnYMin + Math.random() * (sparkCfg.spawnYMax - sparkCfg.spawnYMin));
+                let side = Math.random() > 0.5 ? 'left' : 'right';
+                activeGeysers.push({ side: side, timer: dur, y: startY });
+            } 
+        }
+
+        function spawnSpark(isLeft, fixedY) {
+            let startLife = sparkCfg.lifeMin + Math.random() * (sparkCfg.lifeMax - sparkCfg.lifeMin); 
+            
+            // Расчет глубины (от 0 до 1)
+            let depth = Math.random();
+            let baseOpacity = sparkCfg.opacityMin + depth * (sparkCfg.opacityMax - sparkCfg.opacityMin);
+            let scale = sparkCfg.scaleMin + depth * (sparkCfg.scaleMax - sparkCfg.scaleMin);
+
+            let rawSize = sparkCfg.sizeMin + Math.random() * (sparkCfg.sizeMax - sparkCfg.sizeMin);
+
+            fountainParticles.push({
+                x: isLeft ? -5 : window.innerWidth + 5, 
+                y: fixedY + (Math.random() * 10 - 5), 
+                vx: (isLeft ? 1 : -1) * (sparkCfg.flyXMin + Math.random() * (sparkCfg.flyXMax - sparkCfg.flyXMin)), 
+                vy: -(sparkCfg.flyYMin + Math.random() * (sparkCfg.flyYMax - sparkCfg.flyYMin)),    
+                size: rawSize * scale, // Применяем эффект глубины к размеру
+                baseOpacity: baseOpacity, // Запоминаем базовую прозрачность
+                life: startLife,
+                maxLife: startLife, 
+                sinOffset: Math.random() * 10,
+                sinSpeed: 0.02 + Math.random() * 0.03,
+                isBlinking: false,
+                blinkTimer: Math.random() * 40
+            });
+        }
+
+        function drawBg() {
+            // Если включена строгая тема 'pro', мы просто очищаем холст и НЕ рисуем графику
+            if (currentTheme === 'pro') {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                requestAnimationFrame(drawBg);
+                return;
+            }
+
+            if (bgPattern) { ctx.fillStyle = bgPattern; ctx.fillRect(0, 0, canvas.width, canvas.height); } 
+            else { ctx.clearRect(0, 0, canvas.width, canvas.height); }
+
+            animationFrameCount++;
+            
+            let pColor = '#275220'; let pColorGlow = '#78ff66'; let decorColor = '#132610';
+            if (currentTheme === 'ice') { pColor = '#24445c'; pColorGlow = '#aadcff'; decorColor = '#0f1f2d'; } 
+            else if (currentTheme === 'lava') { pColor = '#5e1914'; pColorGlow = '#ff6c3b'; decorColor = '#260a08'; } 
+            else if (currentTheme === 'clouds') { pColor = '#3f2b5c'; pColorGlow = '#da9eff'; decorColor = '#1d132b'; } 
+            else if (currentTheme === 'water') { pColor = '#16484d'; pColorGlow = '#5ff0ff'; decorColor = '#0b2024'; } 
+            else if (currentTheme === 'earth') { pColor = '#5c3a21'; pColorGlow = '#ffaf66'; decorColor = '#26180e'; }
+
+            // Логика случайного создания НОВОГО ИСТОЧНИКА гейзера
+            if ((currentTheme === 'lava' || currentTheme === 'ice') && Math.random() < sparkCfg.chance) { 
+                let dur = sparkCfg.durationMin + Math.floor(Math.random() * (sparkCfg.durationMax - sparkCfg.durationMin));
+                let randomHeight = window.innerHeight * (sparkCfg.spawnYMin + Math.random() * (sparkCfg.spawnYMax - sparkCfg.spawnYMin));
+                let side = Math.random() > 0.5 ? 'left' : 'right';
+                activeGeysers.push({ side: side, timer: dur, y: randomHeight });
+            }
+
+            // --- ОБРАБОТКА АКТИВНЫХ ГЕЙЗЕРОВ ---
+            for (let i = activeGeysers.length - 1; i >= 0; i--) {
+                let g = activeGeysers[i];
+                g.timer--;
+                
+                for(let s = 0; s < sparkCfg.sparksPerFrame; s++) {
+                    spawnSpark(g.side === 'left', g.y); 
+                }
+                if (g.timer <= 0) activeGeysers.splice(i, 1);
+            }
+
+            // --- ОТРИСОВКА ОБЫЧНЫХ ЧАСТИЦ (Медленных на фоне) ---
+            for(let p of particles) {
+                p.glowTimer--;
+                if(p.glowTimer <= 0) { p.glow = !p.glow; p.glowTimer = p.glow ? 15 + Math.random()*25 : 120 + Math.random()*180; }
+
+                if (currentTheme === 'clouds') { p.x += p.speedX; p.y += Math.sin(p.x * p.sinSpeed + p.sinOffset) * 0.1; if(p.x > canvas.width + 10) Object.assign(p, generateParticle(false)); } 
+                else { p.y += p.speed; p.x += Math.sin(p.y * p.sinSpeed + p.sinOffset) * 0.15; if (p.speed > 0 && p.y > canvas.height + 10) Object.assign(p, generateParticle(false)); else if (p.speed < 0 && p.y < -10) Object.assign(p, generateParticle(false)); }
+
+                ctx.fillStyle = p.glow ? pColorGlow : pColor;
+                if (p.glow) { ctx.shadowBlur = 6; ctx.shadowColor = pColorGlow; } else { ctx.shadowBlur = 0; }
+                ctx.fillRect(Math.floor(p.x), Math.floor(p.y), p.size, p.size);
+            }
+
+            // --- ОТРИСОВКА СТЕН ---
+            ctx.shadowBlur = 0; ctx.fillStyle = decorColor; const slowTime = animationFrameCount * 0.012; 
+            if (currentTheme === 'forest') { for(let i = 0; i < canvas.height; i += 8) { let sway = Math.sin(i * 0.03 + slowTime) * 2.5; let w = Math.floor(6 + sway); ctx.fillRect(0, i, w, 8); ctx.fillRect(canvas.width - w, i, w, 8); if (Math.floor(Math.sin(i * 0.35)) > 0) { ctx.fillRect(w, i + 2, 3, 3); ctx.fillRect(canvas.width - w - 3, i + 2, 3, 3); } } } 
+            else if (currentTheme === 'ice') { for(let i = 0; i < canvas.height; i += 16) { let crystalPulse = Math.sin(i * 0.06 + slowTime * 0.6) * 2; let w = Math.floor(5 + crystalPulse + (i % 48 === 0 ? 5 : (i % 48 === 16 ? 2 : 0))); ctx.fillRect(0, i, w, 16); ctx.fillRect(canvas.width - w, i, w, 16); if (w > 5) { ctx.fillRect(w, i + 6, 2, 4); ctx.fillRect(canvas.width - w - 2, i + 6, 2, 4); } } } 
+            else if (currentTheme === 'lava') { for(let i = 0; i < canvas.height; i += 4) { let flow = Math.sin(i * 0.05 - slowTime * 0.8) * 2.2; let w = Math.floor(8 + flow); ctx.fillStyle = decorColor; ctx.fillRect(0, i, w, 4); ctx.fillRect(canvas.width - w, i, w, 4); if (w > 4 && Math.sin(i * 0.1 + slowTime) > -0.2) { ctx.fillStyle = pColorGlow; ctx.fillRect(w - 2, i, 2, 4); ctx.fillRect(canvas.width - w, i, 2, 4); } } } 
+            else if (currentTheme === 'clouds') { for(let i = 0; i < canvas.height; i += 12) { let puff = Math.sin(i * 0.05 + slowTime * 0.7) * 4; let w = Math.floor(9 + puff); ctx.fillRect(0, i, w, 12); ctx.fillRect(0, i + 3, w + 2, 6); ctx.fillRect(canvas.width - w, i, w, 12); ctx.fillRect(canvas.width - w - 2, i + 3, w + 2, 6); } } 
+            else if (currentTheme === 'water') { for(let i = 0; i < canvas.height; i += 6) { let currentOffset = Math.sin(i * 0.02 - slowTime * 0.9) * 4.5; let w = Math.floor(7 + currentOffset); ctx.fillRect(0, i, w, 6); ctx.fillRect(canvas.width - w, i, w, 6); if (Math.cos(i * 0.1 - slowTime) > 0.3) { ctx.fillRect(w, i + 1, 2, 3); ctx.fillRect(canvas.width - w - 2, i + 1, 2, 3); } } } 
+            else if (currentTheme === 'earth') { for(let i = 0; i < canvas.height; i += 24) { let rockShift = Math.floor(Math.sin(i * 0.08 + slowTime * 0.4) * 1.5); let w = 9 + rockShift; ctx.fillRect(0, i, w, 22); ctx.fillRect(0, i + 6, w + 3, 10); ctx.fillRect(canvas.width - w, i, w, 22); ctx.fillRect(canvas.width - w - 3, i + 6, w + 3, 10); } }
+
+            // --- ОТРИСОВКА ИСКР ПОВЕРХ СТЕН ---
+            // Выбираем правильную альфу для белого ядра в зависимости от темы
+            let currentWhiteAlpha = currentTheme === 'lava' ? sparkCfg.startWhiteAlphaLava : sparkCfg.startWhiteAlphaIce;
+
+            for (let i = fountainParticles.length - 1; i >= 0; i--) {
+                let fp = fountainParticles[i];
+                
+                fp.vx *= sparkCfg.dragX; 
+                fp.vy *= sparkCfg.dragY; 
+                fp.vy += sparkCfg.gravity; 
+
+                fp.x += fp.vx + Math.sin((fp.maxLife - fp.life) * fp.sinSpeed + fp.sinOffset) * sparkCfg.windSway;
+                fp.y += fp.vy;
+                fp.life--;
+
+                fp.blinkTimer--;
+                if (fp.blinkTimer <= 0) {
+                    fp.isBlinking = !fp.isBlinking;
+                    fp.blinkTimer = fp.isBlinking ? 10 + Math.random()*20 : 30 + Math.random()*60;
+                }
+
+                let progress = fp.life / fp.maxLife;
+
+                if (progress > sparkCfg.fadeStart) {
+                    // ФАЗА 1: РОЖДЕНИЕ (Белое ядро зависит от темы)
+                    let alpha = currentWhiteAlpha * fp.baseOpacity; 
+                    
+                    if (alpha > 0) {
+                        ctx.globalAlpha = alpha;
+                        ctx.shadowBlur = sparkCfg.maxGlowBlur; 
+                        ctx.shadowColor = pColorGlow; 
+                        ctx.fillStyle = '#ffffff'; 
+                    } else {
+                        // Если белое свечение отключено (Кристаллы льда)
+                        ctx.globalAlpha = fp.baseOpacity;
+                        ctx.shadowBlur = sparkCfg.maxGlowBlur; 
+                        ctx.shadowColor = pColorGlow; 
+                        ctx.fillStyle = pColorGlow; 
+                    }
+                } else {
+                    // ФАЗА 2: ОСТЫВАНИЕ, МЕРЦАНИЕ И ЗАТУХАНИЕ
+                    let fadeProgress = progress / sparkCfg.fadeStart; 
+                    
+                    // Общая прозрачность цветной искры умножается на её индивидуальную "глубину"
+                    let alpha = sparkCfg.baseGlowAlpha * fadeProgress * fp.baseOpacity; 
+
+                    if (sparkCfg.blinkEnabled && !fp.isBlinking) {
+                        ctx.globalAlpha = alpha * 0.2; 
+                        ctx.shadowBlur = 0; 
+                    } else {
+                        ctx.globalAlpha = alpha; 
+                        ctx.shadowBlur = sparkCfg.maxGlowBlur * fadeProgress; 
+                    }
+                    
+                    ctx.shadowColor = pColorGlow; 
+                    ctx.fillStyle = pColorGlow; 
+                }
+
+                ctx.fillRect(Math.floor(fp.x), Math.floor(fp.y), fp.size, fp.size);
+                
+                if (fp.life <= 0 || fp.y > canvas.height + 50) fountainParticles.splice(i, 1);
+            }
+            
+            ctx.globalAlpha = 1.0;
+            ctx.shadowBlur = 0;
+
+            requestAnimationFrame(drawBg);
+        }
+
+        resizeCanvas();
+        setTheme(currentTheme);
+        drawBg();
+
+        headerBtn.addEventListener('click', () => {
+            let nextIndex = (themeKeys.indexOf(currentTheme) + 1) % themeKeys.length;
+            let newTheme = themeKeys[nextIndex];
+            localStorage.setItem('vafnircut_theme', newTheme);
+            setTheme(newTheme);
+        });
+
+        // =========================================================
+        // === ЛОГИКА PREMIERE PRO ===
+        // =========================================================
+        let csInterface;
+        try {
+            csInterface = new CSInterface();
+            window.addEventListener('load', () => { setTimeout(() => { csInterface.resizeContent(380, document.documentElement.scrollHeight); }, 50); });
+
+            const { exec } = require('child_process');
+            const path = require('path'); 
+            const fs = require('fs');
+
+            runBtn.addEventListener('click', () => {
+                const checkedBoxes = document.querySelectorAll('.track-ch:checked');
+                let trackStringForJSX = "";
+                let editArgForCMD = "";
+                
+                if (checkedBoxes.length > 0) {
+                    const tracks = Array.from(checkedBoxes).map(box => box.value);
+                    trackStringForJSX = tracks.join(','); 
+                    const threshold = thresholdSlider.value;
+                    if (tracks.length === 1) { editArgForCMD = `audio:stream=${tracks[0]},threshold=${threshold}%`; } 
+                    else { const streamQueries = tracks.map(t => `audio:stream=${t},threshold=${threshold}%`).join(' '); editArgForCMD = `"(or ${streamQueries})"`; }
+                } else {
+                    statusDiv.innerHTML = "<span style='color: #e27a7a;'>Выберите хотя бы одну дорожку!</span>"; return;
+                }
+
+                const margin = marginSlider.value;
+                const doRipple = rippleCheck.checked;
+
+                statusDiv.innerHTML = "<span style='color: var(--text-main);'>Чтение метаданных...</span>";
+
+                csInterface.evalScript('getActiveClipData()', function(result) {
+                    if (result.startsWith("ERROR")) { statusDiv.innerHTML = `<span style='color: #e27a7a;'>${result}</span>`; return; }
+                    
+                    const parts = result.split('|||');
+                    const filePath = parts[0];
+
+                    statusDiv.innerHTML = `<span style='color: var(--accent-blue);'>Нейросеть слушает тишину...</span>`;
+
+                    const parsedPath = path.parse(filePath);
+                    const newSeqName = parsedPath.name + "_Cut";
+                    const safeSeqName = newSeqName.replace(/"/g, '\\"');
+                    
+                    const xmlFilePath = path.join(parsedPath.dir, 'CUT_cache.xml');
+
+                    const command = `auto-editor "${filePath}" --export premiere --edit ${editArgForCMD} --margin ${margin}sec -o "${xmlFilePath}"`;
+
+                    exec(command, (error, stdout, stderr) => {
+                        if (error) { statusDiv.innerHTML = `<span style='color: #e27a7a;'>Системная ошибка:<br>${error.message}</span>`; return; }
+                        
+                        try {
+                            let xmlData = fs.readFileSync(xmlFilePath, 'utf8');
+
+                            xmlData = xmlData.replace(/<name>Auto-Editor Media Group<\/name>/g, "<name>Media</name>");
+                            xmlData = xmlData.replace(/<name>Auto-Editor<\/name>/g, "<name>Cache</name>");
+                            
+                            xmlData = xmlData.replace(/<sequence[^>]*>([\s\S]*?)<\/sequence>/i, function(match, inner) {
+                                return match.replace(inner, inner.replace(/<name>[^<]*<\/name>/i, `<name>${newSeqName}</name>`));
+                            });
+
+                            if (!doRipple) {
+                                statusDiv.innerHTML = "<span style='color: var(--text-main);'>Взламываю XML (создаю пустоты)...</span>";
+                                
+                                let maxOut = 0;
+                                let outMatches = [...xmlData.matchAll(/<out>(\d+)<\/out>/g)];
+                                outMatches.forEach(m => {
+                                    let val = parseInt(m[1]);
+                                    if (val > maxOut) maxOut = val;
+                                });
+
+                                xmlData = xmlData.replace(/<clipitem[\s\S]*?>([\s\S]*?)<\/clipitem>/g, function(match, innerContent) {
+                                    let inMatch = innerContent.match(/<in>(-?\d+)<\/in>/);
+                                    let outMatch = innerContent.match(/<out>(-?\d+)<\/out>/);
+                                    if (inMatch && outMatch) {
+                                        let inVal = inMatch[1]; let outVal = outMatch[1];
+                                        let newInner = innerContent.replace(/<start>-?\d+<\/start>/, `<start>${inVal}</start>`)
+                                                                   .replace(/<end>-?\d+<\/end>/, `<end>${outVal}</end>`);
+                                        return match.replace(innerContent, newInner);
+                                    }
+                                    return match;
+                                });
+
+                                let videoBlockRegex = /(<video>[\s\S]*?<track>)([\s\S]*?)(<\/track>[\s\S]*?<\/video>)/;
+                                let match = xmlData.match(videoBlockRegex);
+                                if (match) {
+                                    let prefix = match[1];
+                                    let clips = match[2];
+                                    let suffix = match[3];
+                                    let firstClip = clips.match(/<clipitem[\s\S]*?<\/clipitem>/);
+                                    if (firstClip) {
+                                        let wholeClip = firstClip[0];
+                                        wholeClip = wholeClip.replace(/<in>-?\d+<\/in>/, "<in>0</in>")
+                                                             .replace(/<start>-?\d+<\/start>/, "<start>0</start>")
+                                                             .replace(/<out>-?\d+<\/out>/, `<out>${maxOut}</out>`)
+                                                             .replace(/<end>-?\d+<\/end>/, `<end>${maxOut}</end>`);
+                                        xmlData = xmlData.replace(videoBlockRegex, prefix + "\n" + wholeClip + "\n" + suffix);
+                                    }
+                                }
+                            }
+                            
+                            fs.writeFileSync(xmlFilePath, xmlData); 
+                            
+                            statusDiv.innerHTML = "<span style='color: var(--accent-blue);'>Отправляю в Premiere...</span>";
+                            const escapedPath = xmlFilePath.replace(/\\/g, '\\\\');
+                            
+                            csInterface.evalScript(`importAndCleanXML("${escapedPath}", "${trackStringForJSX}")`, function(res) {
+                                if (res === "SUCCESS") {
+                                     const moveScript = `(function(){
+                                         var proj = app.project; if (!proj) return "Error";
+                                         var cutBin = null;
+                                         
+                                         for (var i = 0; i < proj.rootItem.children.numItems; i++) {
+                                             if (proj.rootItem.children[i].name === "CUT") { cutBin = proj.rootItem.children[i]; break; }
+                                         }
+                                         if (!cutBin) proj.rootItem.createBin("CUT");
+                                         
+                                         function findAndMove(node) {
+                                             for (var i = 0; i < node.children.numItems; i++) {
+                                                 var item = node.children[i];
+                                                 if (item.name === "${safeSeqName}") { item.moveBin(cutBin); return true; }
+                                                 if (item.type === ProjectItemType.BIN && findAndMove(item)) return true;
+                                             }
+                                             return false;
+                                         }
+                                         findAndMove(proj.rootItem);
+                                         return "SUCCESS";
+                                     })()`;
+
+                                     csInterface.evalScript(moveScript, function(moveRes) {
+                                          statusDiv.innerHTML = `<span style='color: #55a868;'>Успех! Секвенция в папке CUT.</span>`;
+                                     });
+                                } else {
+                                     statusDiv.innerHTML = `<span style='color: #e27a7a;'>${res}</span>`;
+                                }
+                            });
+
+                        } catch(e) { statusDiv.innerHTML = `<span style='color: #e27a7a;'>Ошибка XML хакера:<br>${e.message}</span>`; }
+                    });
+                });
+            });
+        } catch (err) { statusDiv.innerHTML = `<span style='color: #e27a7a;'>Критическая ошибка Node.js:<br>${err.message}</span>`; }
+    </script>
+</body>
+</html>
