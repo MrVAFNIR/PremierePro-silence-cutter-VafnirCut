@@ -3,75 +3,66 @@ chcp 65001 >nul
 color 0B
 
 echo ===================================================
-echo   АВТОМАТИЧЕСКАЯ УСТАНОВКА PYTHON И НЕЙРОСЕТИ
+echo   AUTOMATIC INSTALLATION: PYTHON ^& AI ENGINE
 echo ===================================================
 echo.
 
-:: Проверка на права админа
+:: Checking for Administrator privileges
 net session >nul 2>&1
 if %errorLevel% == 0 (
-    echo [OK] Права администратора подтверждены.
+    echo [OK] Administrator privileges confirmed.
 ) else (
-    echo [ОШИБКА] Запусти файл от имени Администратора!
+    echo [ERROR] Please run this file as Administrator!
     pause
     exit
 )
 
-:: Проверяем, установлен ли Python уже, чтобы не качать заново
+:: Checking if Python is already installed
 python --version >nul 2>&1
 if %errorLevel% == 0 (
-    echo [INFO] Python уже установлен в системе. Пропускаю шаг установки...
+    echo [INFO] Python is already installed. Skipping installation step...
     goto install_auto_editor
 )
 
-echo [1/3] Скачиваю официальный установщик Python...
-:: Добавлен флаг -L для следования перенаправлениям URL
+echo [1/3] Downloading official Python installer...
 curl -L -o python_installer.exe https://www.python.org/ftp/python/3.11.8/python-3.11.8-amd64.exe
 
 if not exist python_installer.exe (
-    echo [ОШИБКА] Не удалось скачать установщик. Проверьте интернет-соединение.
+    echo [ERROR] Failed to download the installer. Please check your internet connection.
     pause
     exit
 )
 
 echo.
-echo [2/3] Устанавливаю Python в скрытом режиме...
-echo (Это может занять пару минут, ничего не нажимай)
-:: Используем системную переменную %ProgramFiles% для надежности
+echo [2/3] Installing Python in silent mode...
+echo (This may take a few minutes, please wait...)
 start /wait python_installer.exe /quiet InstallAllUsers=1 PrependPath=1 Include_test=0
-
-:: Удаляем установщик
 del python_installer.exe
 
 :install_auto_editor
 echo.
-echo [3/3] Устанавливаю пакет auto-editor...
+echo [3/3] Installing auto-editor package...
 
-:: Временное обновление путей для текущей сессии командной строки (с кавычками)
 set "PATH=%PATH%;%ProgramFiles%\Python311\;%ProgramFiles%\Python311\Scripts\"
 
-:: Безопасный вызов pip через модуль python с явным указанием пути
 if exist "%ProgramFiles%\Python311\python.exe" (
     "%ProgramFiles%\Python311\python.exe" -m pip install --upgrade pip
     "%ProgramFiles%\Python311\python.exe" -m pip install auto-editor
 ) else (
-    :: Если по какой-то причине путь отличается, пробуем стандартный вызов
     python -m pip install --upgrade pip
     python -m pip install auto-editor
 )
 
-echo Включаю поддержку плагина в Premiere Pro...
-reg add "HKCU\Software\Adobe\CSXS.11" /v PlayerDebugMode /t REG_SZ /d "1" /f >nul
-reg add "HKCU\Software\Adobe\CSXS.12" /v PlayerDebugMode /t REG_SZ /d "1" /f >nul
-reg add "HKCU\Software\Adobe\CSXS.13" /v PlayerDebugMode /t REG_SZ /d "1" /f >nul
-reg add "HKCU\Software\Adobe\CSXS.14" /v PlayerDebugMode /t REG_SZ /d "1" /f >nul
-reg add "HKCU\Software\Adobe\CSXS.15" /v PlayerDebugMode /t REG_SZ /d "1" /f >nul
-reg add "HKCU\Software\Adobe\CSXS.16" /v PlayerDebugMode /t REG_SZ /d "1" /f >nul
-
 echo.
 echo ===================================================
-echo [УСПЕХ] Установка завершена! 
-echo Рекомендуется перезагрузить компьютер (или перезапустить Premiere),
-echo чтобы изменения путей вступили в силу.
+echo [SUCCESS] Core installation complete! 
+echo.
+echo IMPORTANT STEP BEFORE USING THE PLUGIN:
+echo 1. Open Premiere Pro.
+echo 2. Go to "Edit" -^> "Keyboard Shortcuts".
+echo 3. Search for "Timeline" (Window -^> Timeline) and assign it to F8.
+echo 4. Search for "Lift" and assign it to F7.
+echo.
+echo All set! The VafnirCut plugin will now work perfectly.
 echo ===================================================
 pause

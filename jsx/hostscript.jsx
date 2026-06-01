@@ -12,53 +12,69 @@ function getActiveClipData() {
     } catch (e) { return "ERROR JSX: " + e.message; }
 }
 
-function importAndCleanXML(xmlPath, allowedTracksStr) {
+// --- РЕЖИМ 1: RIPPLE DELETE (Работает быстро и тихо) ---
+function liveCutRipple(gapsJson, clipOffset) {
     try {
-        var project = app.project;
-        var f = new File(xmlPath);
-        if (!f.exists) return "ERROR: XML файл не найден.";
+        var gaps = eval("(" + gapsJson + ")");
+        var seq = app.project.activeSequence;
+        app.enableQE();
+        var qeSeq = qe.project.getActiveSequence();
+        
+        for (var v = 0; v < seq.videoTracks.numTracks; v++) seq.videoTracks[v].setTargeted(true, true);
+        for (var a = 0; a < seq.audioTracks.numTracks; a++) seq.audioTracks[a].setTargeted(true, true);
 
-        var oldSeqIds = [];
-        for (var s = 0; s < project.sequences.numSequences; s++) {
-            oldSeqIds.push(project.sequences[s].sequenceID);
+        for (var i = gaps.length - 1; i >= 0; i--) {
+            seq.setInPoint(parseFloat(clipOffset) + parseFloat(gaps[i].start));
+            seq.setOutPoint(parseFloat(clipOffset) + parseFloat(gaps[i].end));
+            qeSeq.extract(); 
         }
 
-        project.importFiles([f.fsName], true, project.rootItem, false);
-        $.sleep(1000); 
-
-        var newSeq = null;
-        for (var s = 0; s < project.sequences.numSequences; s++) {
-            var isOld = false;
-            for (var j = 0; j < oldSeqIds.length; j++) {
-                if (project.sequences[s].sequenceID === oldSeqIds[j]) {
-                    isOld = true; break;
-                }
-            }
-            if (!isOld) { newSeq = project.sequences[s]; break; }
-        }
-
-        if (!newSeq) return "ERROR: Premiere не смог создать секвенцию из XML.";
-        project.openSequence(newSeq.sequenceID);
-        var seq = project.activeSequence;
-
-        var allowed = allowedTracksStr.split(',');
-        var allowedIndexes = [];
-        for (var k = 0; k < allowed.length; k++) allowedIndexes.push(parseInt(allowed[k], 10));
-
-        for (var a = 0; a < seq.audioTracks.numItems; a++) {
-            var isAllowed = false;
-            for (var i = 0; i < allowedIndexes.length; i++) {
-                if (allowedIndexes[i] === a) { isAllowed = true; break; }
-            }
-            if (!isAllowed) {
-                var track = seq.audioTracks[a];
-                for (var j = track.clips.numItems - 1; j >= 0; j--) {
-                    track.clips[j].remove(0, 0); 
-                }
-            }
-        }
+        seq.setInPoint(clipOffset); seq.setOutPoint(clipOffset);
         return "SUCCESS";
-    } catch (e) {
-        return "ERROR JSX: " + e.message;
-    }
+    } catch(e) { return "ERROR JSX: " + e.message; }
+}
+
+// --- РЕЖИМ 2: ПОДГОТОВКА ДЛЯ БОТА (Без псевдо-команд) ---
+function setTargetsForLift(trackIdx) {
+    try {
+        var seq = app.project.activeSequence;
+        
+        for (var v = 0; v < seq.videoTracks.numTracks; v++) {
+            seq.videoTracks[v].setTargeted(false, true);
+        }
+        for (var a = 0; a < seq.audioTracks.numTracks; a++) {
+            var isT = (a === parseInt(trackIdx));
+            seq.audioTracks[a].setTargeted(isT, true);
+        }
+        
+        app.project.activeSequence = seq; 
+        return "SUCCESS";
+    } catch(e) { return "ERROR: " + e.message; }
+}
+
+function setInOutAndDeselect(start, end) {
+    try {
+        var seq = app.project.activeSequence;
+        var sel = seq.getSelection();
+        
+        // Снимаем выделение со всех клипов, чтобы Delete удалял только дырку по In/Out
+        if (sel) {
+            for(var i=0; i<sel.length; i++) sel[i].setSelected(0, 0);
+        }
+        seq.setInPoint(start);
+        seq.setOutPoint(end);
+        
+        return "SUCCESS";
+    } catch(e) { return "ERROR: " + e.message; }
+}
+
+function resetAfterLift(clipOffset) {
+    try {
+        var seq = app.project.activeSequence;
+        for (var v = 0; v < seq.videoTracks.numTracks; v++) seq.videoTracks[v].setTargeted(true, true);
+        for (var a = 0; a < seq.audioTracks.numTracks; a++) seq.audioTracks[a].setTargeted(true, true);
+        seq.setInPoint(clipOffset);
+        seq.setOutPoint(clipOffset);
+        return "SUCCESS";
+    } catch(e) { return "ERROR: " + e.message; }
 }

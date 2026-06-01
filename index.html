@@ -5,126 +5,106 @@
     <title>VafnirCut</title>
     <style>
         :root {
-            --bg-color: #090c09; 
-            --panel-bg: rgba(18, 24, 18, 0.85); 
-            --text-main: #d5d5d5;
-            --text-highlight: #ffffff; 
-            --accent-blue: #2ecc71; 
-            --accent-hover: #27ae60;
-            --border-color: #1b2e1b; 
-            --input-bg: #0c120c;
+            var(--bg-color): #090c09; --panel-bg: rgba(18, 24, 18, 0.85); 
+            --text-main: #d5d5d5; --text-highlight: #ffffff; 
+            --accent-blue: #2ecc71; --accent-hover: #27ae60;
+            --border-color: #1b2e1b; --input-bg: #0c120c;
             --header-glow: rgba(46, 204, 113, 0.45);
             --header-gradient: linear-gradient(90deg, #2ecc71, #ffffff, #a3e4d7, #ffffff, #2ecc71);
+            --panel-shadow: 0 4px 15px rgba(0,0,0,0.4);
+            --glass-filter: blur(4px);
+            --flare-display: block;
+            --header-animation: pearlRainbow 4s linear infinite;
+            --btn-shadow-hover: 0 0 15px var(--header-glow);
         }
         html, body { 
             background-color: var(--bg-color); color: var(--text-main); 
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
             margin: 0; padding: 18px; box-sizing: border-box; 
-            font-size: 14px; user-select: none; 
-            overflow: hidden; 
+            font-size: 14px; user-select: none; overflow: hidden; 
             transition: background-color 0.4s ease;
         }
         *, *:before, *:after { box-sizing: inherit; }
 
-        #bgCanvas {
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            z-index: 0; pointer-events: none;
-            image-rendering: pixelated;
-        }
-
-        /* Блик (отключаем для PRO темы через js) */
+        #bgCanvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 0; pointer-events: none; }
+        
         body::after {
             content: ""; position: absolute; top: 0; left: -150%; width: 70%; height: 100%;
             background: linear-gradient(to right, rgba(255,255,255,0) 0%, rgba(255,255,255,0.04) 50%, rgba(255,255,255,0) 100%);
             transform: skewX(-25deg); animation: glassFlare 12s infinite; pointer-events: none; z-index: 9999;
-            transition: opacity 0.4s ease;
+            display: var(--flare-display);
         }
-        body.theme-pro::after { opacity: 0; animation: none; }
         @keyframes glassFlare { 0% { left: -150%; } 15% { left: 200%; } 100% { left: 200%; } }
 
-        .ui-container { position: relative; z-index: 10; }
+        /* Отключение эффектов для темы PRO */
+        body.theme-pro::after { display: none; }
+        body.theme-pro .control-group { backdrop-filter: none; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
+        body.theme-pro .header { animation: none; filter: none; }
 
-        .header-container { 
-            text-align: center; margin-bottom: 24px; position: relative; 
-            display: flex; justify-content: center; align-items: center;
+        .ui-container { position: relative; z-index: 10; display: flex; flex-direction: column; height: 100%; }
+
+        .lang-toggle {
+            position: absolute; top: -10px; right: -5px; 
+            background: rgba(0, 0, 0, 0.5); border: 1px solid var(--border-color);
+            color: var(--accent-blue); padding: 4px 10px; border-radius: 4px;
+            font-size: 11px; font-weight: bold; cursor: pointer; 
+            backdrop-filter: var(--glass-filter);
+            transition: all 0.3s ease; z-index: 20; letter-spacing: 1px;
         }
-        
+        .lang-toggle:hover { color: var(--text-highlight); border-color: var(--accent-blue); background: var(--panel-bg); }
+
+        .header-container { text-align: center; margin-bottom: 24px; position: relative; display: flex; justify-content: center; align-items: center; }
         .header {
             position: relative; font-size: 28px; font-weight: 900; text-transform: uppercase; 
             letter-spacing: 5px; cursor: pointer;
             background: var(--header-gradient); background-size: 200% auto;
             color: transparent; -webkit-background-clip: text; background-clip: text;
-            animation: pearlRainbow 4s linear infinite;
+            animation: var(--header-animation);
             filter: drop-shadow(0px 0px 10px var(--header-glow));
             transition: filter 0.4s ease, transform 0.2s ease;
         }
-        .header:hover {
-            transform: scale(1.03); filter: drop-shadow(0px 0px 16px var(--header-glow)) brightness(1.1);
-        }
+        .header:hover { transform: scale(1.03); filter: drop-shadow(0px 0px 16px var(--header-glow)) brightness(1.1); }
         @keyframes pearlRainbow { to { background-position: 200% center; } }
 
         .control-group { 
             background-color: var(--panel-bg); padding: 16px; border-radius: 8px; margin-bottom: 16px; 
-            border: 1px solid var(--border-color); 
-            box-shadow: 0 4px 15px rgba(0,0,0,0.4); 
-            backdrop-filter: blur(4px); transition: background-color 0.4s, border-color 0.4s, box-shadow 0.4s;
+            border: 1px solid var(--border-color); box-shadow: var(--panel-shadow);
+            backdrop-filter: var(--glass-filter); transition: background-color 0.4s, border-color 0.4s, box-shadow 0.4s;
         }
-        /* В PRO-теме делаем панели площе */
-        body.theme-pro .control-group { box-shadow: 0 2px 8px rgba(0,0,0,0.2); }
-
-        .control-group label.title { 
-            display: block; margin-bottom: 12px; color: var(--text-highlight); font-weight: bold; 
-            text-transform: uppercase; font-size: 11px; letter-spacing: 0.5px;
-        }
+        
+        .control-group label.title { display: block; margin-bottom: 12px; color: var(--text-highlight); font-weight: bold; font-size: 11px; letter-spacing: 0.5px; }
 
         .tracks-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(65px, 1fr)); gap: 10px; }
         .adobe-checkbox { display: flex; align-items: center; cursor: pointer; font-weight: bold; position: relative;}
         .adobe-checkbox input { position: absolute; opacity: 0; }
-        
-        .checkmark { 
-            height: 16px; width: 16px; background-color: var(--input-bg); border: 1px solid var(--border-color); 
-            border-radius: 4px; margin-right: 8px; display: flex; align-items: center; justify-content: center; 
-            transition: background-color 0.2s, border-color 0.2s, box-shadow 0.2s;
-        }
-        .adobe-checkbox input:checked ~ .checkmark { 
-            background-color: var(--accent-blue); border-color: var(--accent-blue); box-shadow: 0 0 8px var(--header-glow); 
-        }
-        body.theme-pro .adobe-checkbox input:checked ~ .checkmark { box-shadow: none; }
-
-        .checkmark:after { 
-            content: ""; display: none; width: 4px; height: 9px; border: solid #fff; 
-            border-width: 0 2px 2px 0; transform: rotate(45deg); margin-bottom: 2px; 
-        }
+        .checkmark { height: 16px; width: 16px; background-color: var(--input-bg); border: 1px solid var(--border-color); border-radius: 4px; margin-right: 8px; display: flex; align-items: center; justify-content: center; transition: background-color 0.2s, border-color 0.2s; }
+        .adobe-checkbox input:checked ~ .checkmark { background-color: var(--accent-blue); border-color: var(--accent-blue); box-shadow: 0 0 8px var(--header-glow); }
+        .checkmark:after { content: ""; display: none; width: 4px; height: 9px; border: solid #fff; border-width: 0 2px 2px 0; transform: rotate(45deg); margin-bottom: 2px; }
         .adobe-checkbox input:checked ~ .checkmark:after { display: block; }
 
         .slider-container { margin-top: 14px; }
         .slider-container:first-child { margin-top: 0; }
         .slider-header { display: flex; justify-content: space-between; margin-bottom: 8px; color: var(--text-highlight); font-size: 13px; font-weight: 600; }
         .slider-header span { color: var(--accent-blue); font-family: monospace; font-weight: bold; transition: color 0.4s; }
-        
         input[type="range"] { -webkit-appearance: none; width: 100%; background: transparent; }
         input[type="range"]::-webkit-slider-runnable-track { width: 100%; height: 4px; background: var(--input-bg); border-radius: 2px; }
-        input[type="range"]::-webkit-slider-thumb { 
-            height: 14px; width: 14px; border-radius: 50%; background: var(--text-highlight); cursor: pointer; 
-            -webkit-appearance: none; margin-top: -5px; 
-            box-shadow: 0 0 5px rgba(0,0,0,0.5); 
-        }
+        input[type="range"]::-webkit-slider-thumb { height: 14px; width: 14px; border-radius: 50%; background: var(--text-highlight); cursor: pointer; -webkit-appearance: none; margin-top: -5px; box-shadow: 0 0 5px rgba(0,0,0,0.5); }
 
-        button { 
+        button.main-btn { 
             width: 100%; background: linear-gradient(180deg, var(--accent-blue), var(--accent-hover)); 
-            color: #fff; border: 1px solid rgba(0,0,0,0.15); padding: 14px; font-size: 15px; font-weight: bold; 
-            border-radius: 6px; cursor: pointer; margin-top: 8px; 
-            box-shadow: 0 4px 10px rgba(0,0,0,0.3); 
+            color: #fff; border: 1px solid var(--border-color); padding: 14px; font-size: 15px; font-weight: bold; 
+            border-radius: 6px; cursor: pointer; margin-top: 8px; box-shadow: var(--panel-shadow); 
             text-transform: uppercase; letter-spacing: 0.5px; transition: background 0.4s, box-shadow 0.2s;
         }
-        button:hover { box-shadow: 0 0 15px var(--header-glow); } 
-        body.theme-pro button:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.4); filter: brightness(1.1); }
+        button.main-btn:hover { box-shadow: var(--btn-shadow-hover); }
 
-        #status { 
-            margin-top: 16px; font-size: 12px; font-weight: bold; color: #8c8c8c; padding: 12px; 
-            background-color: var(--input-bg); border: 1px solid var(--border-color); border-radius: 6px; 
-            text-align: center; transition: background-color 0.4s, border-color 0.4s;
-            word-wrap: break-word;
+        #status { margin-top: 16px; font-size: 12px; font-weight: bold; color: #8c8c8c; padding: 12px; background-color: var(--input-bg); border: 1px solid var(--border-color); border-radius: 6px; text-align: center; transition: background-color 0.4s, border-color 0.4s; word-wrap: break-word; }
+
+        /* Название стиля внизу */
+        #themeNameDisplay {
+            margin-top: 20px; text-align: center; font-size: 11px; font-weight: 700;
+            letter-spacing: 3px; text-transform: uppercase; color: var(--text-main);
+            opacity: 0.3; transition: opacity 0.4s, color 0.4s; pointer-events: none;
         }
     </style>
     <script src="./CSInterface.js"></script>
@@ -133,12 +113,14 @@
     <canvas id="bgCanvas"></canvas>
 
     <div class="ui-container">
+        <div class="lang-toggle" id="langBtn" title="Change Language">EN</div>
+
         <div class="header-container">
-            <div class="header" id="headerBtn" data-text="VAFNIRCUT">VAFNIRCUT</div>
+            <div class="header" id="headerBtn" title="Сменить тему">VAFNIRCUT</div>
         </div>
 
         <div class="control-group">
-            <label class="title">Анализируемые аудиоканалы:</label>
+            <label class="title" data-i18n="titleChannels">Анализируемые аудиоканалы:</label>
             <div class="tracks-grid">
                 <label class="adobe-checkbox"><input type="checkbox" class="track-ch" value="0" checked><span class="checkmark"></span>A1</label>
                 <label class="adobe-checkbox"><input type="checkbox" class="track-ch" value="1" checked><span class="checkmark"></span>A2</label>
@@ -150,11 +132,11 @@
 
         <div class="control-group">
             <div class="slider-container">
-                <div class="slider-header"><label>Отступ (Margin)</label><span><span id="marginValue">0.2</span> s</span></div>
+                <div class="slider-header"><label data-i18n="marginLabel">Отступ (Margin)</label><span><span id="marginValue">0.2</span> s</span></div>
                 <input type="range" id="marginSlider" min="0" max="1" step="0.1" value="0.2">
             </div>
             <div class="slider-container">
-                <div class="slider-header"><label>Порог шума (Threshold)</label><span><span id="thresholdValue">4</span> %</span></div>
+                <div class="slider-header"><label data-i18n="thresholdLabel">Порог шума (Threshold)</label><span><span id="thresholdValue">4</span> %</span></div>
                 <input type="range" id="thresholdSlider" min="1" max="50" step="1" value="4">
             </div>
         </div>
@@ -162,461 +144,487 @@
         <div class="control-group" style="margin-bottom: 8px;">
             <label class="adobe-checkbox">
                 <input type="checkbox" id="rippleCheck" checked>
-                <span class="checkmark"></span> Удаление со сдвигом (Ripple Delete)
+                <span class="checkmark"></span> <span data-i18n="rippleLabel">Удаление со сдвигом (Ripple Delete)</span>
             </label>
         </div>
         
-        <button id="runBtn">ОБРЕЗАТЬ ТАЙМЛАЙН</button>
-        <div id="status">Выдели клип на таймлайне и жми кнопку</div>
+        <button class="main-btn" id="runBtn" data-i18n="runBtn">ОБРЕЗАТЬ ТАЙМЛАЙН</button>
+        <div id="status" data-i18n="statusIdle">Выдели клип на таймлайне и жми кнопку</div>
+        
+        <div id="themeNameDisplay">STYLE: PREMIERE PRO CLASSIC</div>
     </div>
 
     <script>
         const statusDiv = document.getElementById('status');
-        window.onerror = function(msg, url, line) { if (statusDiv) statusDiv.innerHTML = `<span style='color:#e27a7a'>Сбой: ${msg}</span>`; };
+        window.onerror = function(msg) { if (statusDiv) statusDiv.innerHTML = `<span style='color:#e27a7a'>Error: ${msg}</span>`; };
 
-        const marginSlider = document.getElementById('marginSlider'); const thresholdSlider = document.getElementById('thresholdSlider');
-        const marginValue = document.getElementById('marginValue'); const thresholdValue = document.getElementById('thresholdValue');
-        const headerBtn = document.getElementById('headerBtn'); const runBtn = document.getElementById('runBtn');
-        const rippleCheck = document.getElementById('rippleCheck');
-
-        marginSlider.addEventListener('input', () => { marginValue.textContent = marginSlider.value; });
-        thresholdSlider.addEventListener('input', () => { thresholdValue.textContent = thresholdSlider.value; });
-
-        const themes = {
-            forest: { '--bg-color': '#090c09', '--panel-bg': 'rgba(18, 24, 18, 0.85)', '--accent-blue': '#2ecc71', '--accent-hover': '#27ae60', '--border-color': '#1b2e1b', '--input-bg': '#0c120c', '--header-glow': 'rgba(46, 204, 113, 0.45)', '--header-gradient': 'linear-gradient(90deg, #2ecc71, #ffffff, #a3e4d7, #ffffff, #2ecc71)' },
-            ice: { '--bg-color': '#070f14', '--panel-bg': 'rgba(14, 25, 33, 0.85)', '--accent-blue': '#3498db', '--accent-hover': '#2980b9', '--border-color': '#192b3a', '--input-bg': '#0c151c', '--header-glow': 'rgba(52, 152, 219, 0.45)', '--header-gradient': 'linear-gradient(90deg, #3498db, #ffffff, #d6eaf8, #ffffff, #3498db)' },
-            lava: { '--bg-color': '#100705', '--panel-bg': 'rgba(26, 14, 11, 0.85)', '--accent-blue': '#e74c3c', '--accent-hover': '#c0392b', '--border-color': '#331b17', '--input-bg': '#140b08', '--header-glow': 'rgba(231, 76, 60, 0.45)', '--header-gradient': 'linear-gradient(90deg, #e74c3c, #ffffff, #f9e79f, #ffffff, #e74c3c)' },
-            clouds: { '--bg-color': '#0b0811', '--panel-bg': 'rgba(19, 14, 28, 0.85)', '--accent-blue': '#9b59b6', '--accent-hover': '#8e44ad', '--border-color': '#2a1f3c', '--input-bg': '#100c19', '--header-glow': 'rgba(155, 89, 182, 0.45)', '--header-gradient': 'linear-gradient(90deg, #9b59b6, #ffffff, #ebdef0, #ffffff, #9b59b6)' },
-            water: { '--bg-color': '#040d10', '--panel-bg': 'rgba(10, 24, 29, 0.85)', '--accent-blue': '#1abc9c', '--accent-hover': '#16a085', '--border-color': '#153641', '--input-bg': '#061419', '--header-glow': 'rgba(26, 188, 156, 0.45)', '--header-gradient': 'linear-gradient(90deg, #1abc9c, #ffffff, #e8f8f5, #ffffff, #1abc9c)' },
-            earth: { '--bg-color': '#0d0a07', '--panel-bg': 'rgba(24, 19, 14, 0.85)', '--accent-blue': '#d35400', '--accent-hover': '#b03a2e', '--border-color': '#36291d', '--input-bg': '#110d0a', '--header-glow': 'rgba(211, 84, 0, 0.45)', '--header-gradient': 'linear-gradient(90deg, #d35400, #ffffff, #fadbd8, #ffffff, #d35400)' },
-            pro: { '--bg-color': '#1e1e1e', '--panel-bg': '#252525', '--accent-blue': '#2a82da', '--accent-hover': '#3b90e3', '--border-color': '#333333', '--input-bg': '#141414', '--header-glow': 'transparent', '--header-gradient': 'linear-gradient(90deg, #b0b0b0, #ffffff, #b0b0b0)' }
-        };
-
-        const themeKeys = Object.keys(themes);
-        let currentTheme = localStorage.getItem('vafnircut_theme') || 'forest';
-
-        // =========================================================
-        // === ПЕРЕМЕННЫЕ И ФУНКЦИИ ФОНА ===
-        // =========================================================
-        const canvas = document.getElementById('bgCanvas');
-        const ctx = canvas.getContext('2d');
-        let particles = [];
-        let fountainParticles = []; 
-        let activeGeysers = []; 
-        let animationFrameCount = 0;
-        let bgPattern = null; 
-
-        // ⬇️⬇️⬇️ МЕГА-КОНФИГ ГЕЙЗЕРОВ И ИСКР ⬇️⬇️⬇️
-        const sparkCfg = {
-            // --- ОСНОВНЫЕ ПАРАМЕТРЫ ПОЯВЛЕНИЯ ---
-            chance: 0.001,             // Шанс вылета каждый кадр (0.005 = ~раз в 3-4 секунды)
-            durationMin: 20,           // Минимальное время работы струи (в кадрах)
-            durationMax: 180,          // Максимальное время работы струи 
-            sparksPerFrame: 3,         // Густота: количество новых искр КАЖДЫЙ кадр работы
-            spawnYMin: 0.2,            // Появление искр ОТ (0.2 = 20% от верха экрана)
-            spawnYMax: 0.9,            // Появление искр ДО (0.9 = 90% от верха экрана)
-
-            // --- ГЛУБИНА (ЭФФЕКТ БЛИЗКО/ДАЛЕКО) ---
-            opacityMin: 0.1,           // Минимальная базовая прозрачность (тусклые = далеко)
-            opacityMax: 0.7,           // Максимальная базовая прозрачность (яркие = близко)
-            scaleMin: 0.1,             // Множитель размера для эффекта глубины (мелкие = далеко)
-            scaleMax: 1.5,             // Множитель размера для эффекта глубины (крупные = близко)
-
-            // --- РАЗМЕРЫ И ВРЕМЯ ЖИЗНИ ЧАСТИЦ ---
-            sizeMin: 0.5,              // Минимальный базовый размер искры (в пикселях)
-            sizeMax: 3.5,              // Максимальный базовый размер искры
-            lifeMin: 30,               // Минимальное время жизни (сколько кадров проживет)
-            lifeMax: 180,              // Максимальное время жизни 
-
-            // --- ФИЗИКА: ПОЛЕТ И СОПРОТИВЛЕНИЕ ---
-            flyXMin: 1.0,              // Минимальная сила выстрела В ЦЕНТР
-            flyXMax: 3.5,              // Максимальная сила выстрела В ЦЕНТР
-            flyYMin: 1.0,              // Минимальная сила выстрела ВВЕРХ
-            flyYMax: 6.0,              // Максимальная сила выстрела ВВЕРХ
-            dragX: 0.99,               // Торможение по горизонтали 
-            dragY: 0.99,               // Торможение по вертикали 
-            gravity: 0.08,             // Гравитация (сила притяжения вниз)
-            windSway: 0.4,             // Сила покачивания "на ветру" 
-
-            // --- СВЕЧЕНИЕ (GLOW), ЦВЕТ И МЕРЦАНИЕ ---
-            startWhiteAlphaLava: 0.55, // Яркость белого ядра при рождении (для Лавы)
-            startWhiteAlphaIce: 0.0,   // Яркость белого ядра при рождении (для Льда)
-            
-            maxGlowBlur: 10,           // Максимальный радиус свечения (тень)
-            fadeStart: 0.85,           // Порог начала угасания (0.85 = угасает последние 85% жизни)
-            
-            baseGlowAlpha: 1.0,        // Насколько ярко светится цветная искра ПОСЛЕ остывания белого ядра
-            blinkEnabled: false        // Включить эффект мерцания (true/false)
-        };
-        // ⬆️⬆️⬆️ КОНЕЦ НАСТРОЕК ⬆️⬆️⬆️
-
-        function resizeCanvas() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
-        window.addEventListener('resize', resizeCanvas); 
-
-        function generateBackgroundTexture(baseColorHex) {
-            const patternCanvas = document.createElement('canvas');
-            const tileSize = 128; const pixelSize = 16; 
-            patternCanvas.width = tileSize; patternCanvas.height = tileSize;
-            const pCtx = patternCanvas.getContext('2d');
-            pCtx.fillStyle = baseColorHex; pCtx.fillRect(0, 0, tileSize, tileSize);
-            for (let y = 0; y < tileSize; y += pixelSize) {
-                for (let x = 0; x < tileSize; x += pixelSize) {
-                    const rand = Math.random();
-                    if (rand < 0.10) { pCtx.fillStyle = 'rgba(255, 255, 255, 0.005)'; pCtx.fillRect(x, y, pixelSize, pixelSize); } 
-                    else if (rand > 0.75) { pCtx.fillStyle = 'rgba(0, 0, 0, 0.1)'; pCtx.fillRect(x, y, pixelSize, pixelSize); } 
-                    else if (rand > 0.65) { pCtx.fillStyle = 'rgba(0, 0, 0, 0.24)'; pCtx.fillRect(x, y, pixelSize, pixelSize); }
-                }
+        const i18n = {
+            ru: {
+                titleChannels: "Анализируемые аудиоканалы:", marginLabel: "Отступ (Margin)", thresholdLabel: "Порог шума (Threshold)",
+                rippleLabel: "Удаление со сдвигом (Ripple Delete)", runBtn: "ОБРЕЗАТЬ ТАЙМЛАЙН",
+                statusIdle: "Выдели клип на таймлайне и жми кнопку", statusReading: "Чтение метаданных...",
+                statusListening: "Нейросеть слушает тишину...", statusCutting: "Режем таймлайн (Не трогайте мышку!)...",
+                statusSuccess: "Успех! Секвенция нарезана."
+            },
+            en: {
+                titleChannels: "Analyzed audio channels:", marginLabel: "Margin", thresholdLabel: "Threshold",
+                rippleLabel: "Ripple Delete", runBtn: "CUT TIMELINE",
+                statusIdle: "Select a clip on the timeline and click", statusReading: "Reading metadata...",
+                statusListening: "AI is listening for silence...", statusCutting: "Live cutting (Hands off the mouse!)...",
+                statusSuccess: "Success! Timeline cut."
             }
-            return ctx.createPattern(patternCanvas, 'repeat');
-        }
+        };
 
-        function generateParticle(randomY = false) {
-            const p = {
-                x: Math.random() * canvas.width, y: randomY ? Math.random() * canvas.height : -10,
-                speed: 0.15 + Math.random() * 0.4, size: 2 + Math.floor(Math.random() * 3),
-                glow: false, glowTimer: Math.random() * 100, sinOffset: Math.random() * 10, sinSpeed: 0.005 + Math.random() * 0.01
-            };
-            if (currentTheme === 'lava' || currentTheme === 'water') { p.y = randomY ? Math.random() * canvas.height : canvas.height + 10; p.speed = -(0.15 + Math.random() * 0.35); }
-            if (currentTheme === 'clouds') { p.x = randomY ? Math.random() * canvas.width : -20; p.y = Math.random() * canvas.height; p.speedX = 0.1 + Math.random() * 0.25; }
-            return p;
-        }
+        let currentLang = localStorage.getItem('vafnircut_lang') || 'en';
+        const langBtn = document.getElementById('langBtn');
 
-        function initParticles() { particles = []; for(let i = 0; i < 35; i++) { particles.push(generateParticle(true)); } }
-
-        function setTheme(themeKey) {
-            currentTheme = themeKey;
-            const theme = themes[themeKey];
-            for (const [key, value] of Object.entries(theme)) { document.documentElement.style.setProperty(key, value); }
-            
-            // Навешиваем класс для скрытия блика в PRO теме
-            if (themeKey === 'pro') document.body.classList.add('theme-pro');
-            else document.body.classList.remove('theme-pro');
-
-            // В ПРО-теме не рисуем текстуру фона (экономим ресурсы)
-            bgPattern = themeKey === 'pro' ? null : generateBackgroundTexture(theme['--bg-color']);
-            
-            initParticles(); 
-            fountainParticles = [];
-            activeGeysers = [];
-            
-            // Демонстрационный залп при выборе темы
-            if (themeKey === 'lava' || themeKey === 'ice') { 
-                let dur = sparkCfg.durationMin + Math.floor(Math.random() * (sparkCfg.durationMax - sparkCfg.durationMin));
-                let startY = window.innerHeight * (sparkCfg.spawnYMin + Math.random() * (sparkCfg.spawnYMax - sparkCfg.spawnYMin));
-                let side = Math.random() > 0.5 ? 'left' : 'right';
-                activeGeysers.push({ side: side, timer: dur, y: startY });
-            } 
-        }
-
-        function spawnSpark(isLeft, fixedY) {
-            let startLife = sparkCfg.lifeMin + Math.random() * (sparkCfg.lifeMax - sparkCfg.lifeMin); 
-            
-            // Расчет глубины (от 0 до 1)
-            let depth = Math.random();
-            let baseOpacity = sparkCfg.opacityMin + depth * (sparkCfg.opacityMax - sparkCfg.opacityMin);
-            let scale = sparkCfg.scaleMin + depth * (sparkCfg.scaleMax - sparkCfg.scaleMin);
-
-            let rawSize = sparkCfg.sizeMin + Math.random() * (sparkCfg.sizeMax - sparkCfg.sizeMin);
-
-            fountainParticles.push({
-                x: isLeft ? -5 : window.innerWidth + 5, 
-                y: fixedY + (Math.random() * 10 - 5), 
-                vx: (isLeft ? 1 : -1) * (sparkCfg.flyXMin + Math.random() * (sparkCfg.flyXMax - sparkCfg.flyXMin)), 
-                vy: -(sparkCfg.flyYMin + Math.random() * (sparkCfg.flyYMax - sparkCfg.flyYMin)),    
-                size: rawSize * scale, // Применяем эффект глубины к размеру
-                baseOpacity: baseOpacity, // Запоминаем базовую прозрачность
-                life: startLife,
-                maxLife: startLife, 
-                sinOffset: Math.random() * 10,
-                sinSpeed: 0.02 + Math.random() * 0.03,
-                isBlinking: false,
-                blinkTimer: Math.random() * 40
+        function setLang(lang) {
+            currentLang = lang;
+            localStorage.setItem('vafnircut_lang', lang);
+            langBtn.textContent = lang.toUpperCase();
+            document.querySelectorAll('[data-i18n]').forEach(el => {
+                const key = el.getAttribute('data-i18n');
+                if (i18n[lang][key]) el.textContent = i18n[lang][key];
             });
         }
+        langBtn.addEventListener('click', () => { setLang(currentLang === 'ru' ? 'en' : 'ru'); });
+        setLang(currentLang);
 
-        function drawBg() {
-            // Если включена строгая тема 'pro', мы просто очищаем холст и НЕ рисуем графику
-            if (currentTheme === 'pro') {
-                ctx.clearRect(0, 0, canvas.width, canvas.height);
-                requestAnimationFrame(drawBg);
-                return;
-            }
-
-            if (bgPattern) { ctx.fillStyle = bgPattern; ctx.fillRect(0, 0, canvas.width, canvas.height); } 
-            else { ctx.clearRect(0, 0, canvas.width, canvas.height); }
-
-            animationFrameCount++;
-            
-            let pColor = '#275220'; let pColorGlow = '#78ff66'; let decorColor = '#132610';
-            if (currentTheme === 'ice') { pColor = '#24445c'; pColorGlow = '#aadcff'; decorColor = '#0f1f2d'; } 
-            else if (currentTheme === 'lava') { pColor = '#5e1914'; pColorGlow = '#ff6c3b'; decorColor = '#260a08'; } 
-            else if (currentTheme === 'clouds') { pColor = '#3f2b5c'; pColorGlow = '#da9eff'; decorColor = '#1d132b'; } 
-            else if (currentTheme === 'water') { pColor = '#16484d'; pColorGlow = '#5ff0ff'; decorColor = '#0b2024'; } 
-            else if (currentTheme === 'earth') { pColor = '#5c3a21'; pColorGlow = '#ffaf66'; decorColor = '#26180e'; }
-
-            // Логика случайного создания НОВОГО ИСТОЧНИКА гейзера
-            if ((currentTheme === 'lava' || currentTheme === 'ice') && Math.random() < sparkCfg.chance) { 
-                let dur = sparkCfg.durationMin + Math.floor(Math.random() * (sparkCfg.durationMax - sparkCfg.durationMin));
-                let randomHeight = window.innerHeight * (sparkCfg.spawnYMin + Math.random() * (sparkCfg.spawnYMax - sparkCfg.spawnYMin));
-                let side = Math.random() > 0.5 ? 'left' : 'right';
-                activeGeysers.push({ side: side, timer: dur, y: randomHeight });
-            }
-
-            // --- ОБРАБОТКА АКТИВНЫХ ГЕЙЗЕРОВ ---
-            for (let i = activeGeysers.length - 1; i >= 0; i--) {
-                let g = activeGeysers[i];
-                g.timer--;
-                
-                for(let s = 0; s < sparkCfg.sparksPerFrame; s++) {
-                    spawnSpark(g.side === 'left', g.y); 
-                }
-                if (g.timer <= 0) activeGeysers.splice(i, 1);
-            }
-
-            // --- ОТРИСОВКА ОБЫЧНЫХ ЧАСТИЦ (Медленных на фоне) ---
-            for(let p of particles) {
-                p.glowTimer--;
-                if(p.glowTimer <= 0) { p.glow = !p.glow; p.glowTimer = p.glow ? 15 + Math.random()*25 : 120 + Math.random()*180; }
-
-                if (currentTheme === 'clouds') { p.x += p.speedX; p.y += Math.sin(p.x * p.sinSpeed + p.sinOffset) * 0.1; if(p.x > canvas.width + 10) Object.assign(p, generateParticle(false)); } 
-                else { p.y += p.speed; p.x += Math.sin(p.y * p.sinSpeed + p.sinOffset) * 0.15; if (p.speed > 0 && p.y > canvas.height + 10) Object.assign(p, generateParticle(false)); else if (p.speed < 0 && p.y < -10) Object.assign(p, generateParticle(false)); }
-
-                ctx.fillStyle = p.glow ? pColorGlow : pColor;
-                if (p.glow) { ctx.shadowBlur = 6; ctx.shadowColor = pColorGlow; } else { ctx.shadowBlur = 0; }
-                ctx.fillRect(Math.floor(p.x), Math.floor(p.y), p.size, p.size);
-            }
-
-            // --- ОТРИСОВКА СТЕН ---
-            ctx.shadowBlur = 0; ctx.fillStyle = decorColor; const slowTime = animationFrameCount * 0.012; 
-            if (currentTheme === 'forest') { for(let i = 0; i < canvas.height; i += 8) { let sway = Math.sin(i * 0.03 + slowTime) * 2.5; let w = Math.floor(6 + sway); ctx.fillRect(0, i, w, 8); ctx.fillRect(canvas.width - w, i, w, 8); if (Math.floor(Math.sin(i * 0.35)) > 0) { ctx.fillRect(w, i + 2, 3, 3); ctx.fillRect(canvas.width - w - 3, i + 2, 3, 3); } } } 
-            else if (currentTheme === 'ice') { for(let i = 0; i < canvas.height; i += 16) { let crystalPulse = Math.sin(i * 0.06 + slowTime * 0.6) * 2; let w = Math.floor(5 + crystalPulse + (i % 48 === 0 ? 5 : (i % 48 === 16 ? 2 : 0))); ctx.fillRect(0, i, w, 16); ctx.fillRect(canvas.width - w, i, w, 16); if (w > 5) { ctx.fillRect(w, i + 6, 2, 4); ctx.fillRect(canvas.width - w - 2, i + 6, 2, 4); } } } 
-            else if (currentTheme === 'lava') { for(let i = 0; i < canvas.height; i += 4) { let flow = Math.sin(i * 0.05 - slowTime * 0.8) * 2.2; let w = Math.floor(8 + flow); ctx.fillStyle = decorColor; ctx.fillRect(0, i, w, 4); ctx.fillRect(canvas.width - w, i, w, 4); if (w > 4 && Math.sin(i * 0.1 + slowTime) > -0.2) { ctx.fillStyle = pColorGlow; ctx.fillRect(w - 2, i, 2, 4); ctx.fillRect(canvas.width - w, i, 2, 4); } } } 
-            else if (currentTheme === 'clouds') { for(let i = 0; i < canvas.height; i += 12) { let puff = Math.sin(i * 0.05 + slowTime * 0.7) * 4; let w = Math.floor(9 + puff); ctx.fillRect(0, i, w, 12); ctx.fillRect(0, i + 3, w + 2, 6); ctx.fillRect(canvas.width - w, i, w, 12); ctx.fillRect(canvas.width - w - 2, i + 3, w + 2, 6); } } 
-            else if (currentTheme === 'water') { for(let i = 0; i < canvas.height; i += 6) { let currentOffset = Math.sin(i * 0.02 - slowTime * 0.9) * 4.5; let w = Math.floor(7 + currentOffset); ctx.fillRect(0, i, w, 6); ctx.fillRect(canvas.width - w, i, w, 6); if (Math.cos(i * 0.1 - slowTime) > 0.3) { ctx.fillRect(w, i + 1, 2, 3); ctx.fillRect(canvas.width - w - 2, i + 1, 2, 3); } } } 
-            else if (currentTheme === 'earth') { for(let i = 0; i < canvas.height; i += 24) { let rockShift = Math.floor(Math.sin(i * 0.08 + slowTime * 0.4) * 1.5); let w = 9 + rockShift; ctx.fillRect(0, i, w, 22); ctx.fillRect(0, i + 6, w + 3, 10); ctx.fillRect(canvas.width - w, i, w, 22); ctx.fillRect(canvas.width - w - 3, i + 6, w + 3, 10); } }
-
-            // --- ОТРИСОВКА ИСКР ПОВЕРХ СТЕН ---
-            // Выбираем правильную альфу для белого ядра в зависимости от темы
-            let currentWhiteAlpha = currentTheme === 'lava' ? sparkCfg.startWhiteAlphaLava : sparkCfg.startWhiteAlphaIce;
-
-            for (let i = fountainParticles.length - 1; i >= 0; i--) {
-                let fp = fountainParticles[i];
-                
-                fp.vx *= sparkCfg.dragX; 
-                fp.vy *= sparkCfg.dragY; 
-                fp.vy += sparkCfg.gravity; 
-
-                fp.x += fp.vx + Math.sin((fp.maxLife - fp.life) * fp.sinSpeed + fp.sinOffset) * sparkCfg.windSway;
-                fp.y += fp.vy;
-                fp.life--;
-
-                fp.blinkTimer--;
-                if (fp.blinkTimer <= 0) {
-                    fp.isBlinking = !fp.isBlinking;
-                    fp.blinkTimer = fp.isBlinking ? 10 + Math.random()*20 : 30 + Math.random()*60;
-                }
-
-                let progress = fp.life / fp.maxLife;
-
-                if (progress > sparkCfg.fadeStart) {
-                    // ФАЗА 1: РОЖДЕНИЕ (Белое ядро зависит от темы)
-                    let alpha = currentWhiteAlpha * fp.baseOpacity; 
-                    
-                    if (alpha > 0) {
-                        ctx.globalAlpha = alpha;
-                        ctx.shadowBlur = sparkCfg.maxGlowBlur; 
-                        ctx.shadowColor = pColorGlow; 
-                        ctx.fillStyle = '#ffffff'; 
-                    } else {
-                        // Если белое свечение отключено (Кристаллы льда)
-                        ctx.globalAlpha = fp.baseOpacity;
-                        ctx.shadowBlur = sparkCfg.maxGlowBlur; 
-                        ctx.shadowColor = pColorGlow; 
-                        ctx.fillStyle = pColorGlow; 
-                    }
-                } else {
-                    // ФАЗА 2: ОСТЫВАНИЕ, МЕРЦАНИЕ И ЗАТУХАНИЕ
-                    let fadeProgress = progress / sparkCfg.fadeStart; 
-                    
-                    // Общая прозрачность цветной искры умножается на её индивидуальную "глубину"
-                    let alpha = sparkCfg.baseGlowAlpha * fadeProgress * fp.baseOpacity; 
-
-                    if (sparkCfg.blinkEnabled && !fp.isBlinking) {
-                        ctx.globalAlpha = alpha * 0.2; 
-                        ctx.shadowBlur = 0; 
-                    } else {
-                        ctx.globalAlpha = alpha; 
-                        ctx.shadowBlur = sparkCfg.maxGlowBlur * fadeProgress; 
-                    }
-                    
-                    ctx.shadowColor = pColorGlow; 
-                    ctx.fillStyle = pColorGlow; 
-                }
-
-                ctx.fillRect(Math.floor(fp.x), Math.floor(fp.y), fp.size, fp.size);
-                
-                if (fp.life <= 0 || fp.y > canvas.height + 50) fountainParticles.splice(i, 1);
-            }
-            
-            ctx.globalAlpha = 1.0;
-            ctx.shadowBlur = 0;
-
-            requestAnimationFrame(drawBg);
+        function setStatus(key, color) {
+            statusDiv.innerHTML = `<span style='color: ${color};'>${i18n[currentLang][key] || key}</span>`;
         }
 
-        resizeCanvas();
-        setTheme(currentTheme);
-        drawBg();
-
-        headerBtn.addEventListener('click', () => {
-            let nextIndex = (themeKeys.indexOf(currentTheme) + 1) % themeKeys.length;
-            let newTheme = themeKeys[nextIndex];
-            localStorage.setItem('vafnircut_theme', newTheme);
-            setTheme(newTheme);
+        // --- ЛОГИКА СОХРАНЕНИЯ НАСТРОЕК ---
+        const marginSlider = document.getElementById('marginSlider');
+        const thresholdSlider = document.getElementById('thresholdSlider');
+        
+        const savedMargin = localStorage.getItem('vafnircut_margin');
+        if (savedMargin !== null) marginSlider.value = savedMargin;
+        document.getElementById('marginValue').textContent = marginSlider.value;
+        
+        marginSlider.addEventListener('input', () => { 
+            document.getElementById('marginValue').textContent = marginSlider.value; 
+            localStorage.setItem('vafnircut_margin', marginSlider.value);
         });
 
-        // =========================================================
-        // === ЛОГИКА PREMIERE PRO ===
-        // =========================================================
+        const savedThreshold = localStorage.getItem('vafnircut_threshold');
+        if (savedThreshold !== null) thresholdSlider.value = savedThreshold;
+        document.getElementById('thresholdValue').textContent = thresholdSlider.value;
+        
+        thresholdSlider.addEventListener('input', () => { 
+            document.getElementById('thresholdValue').textContent = thresholdSlider.value; 
+            localStorage.setItem('vafnircut_threshold', thresholdSlider.value);
+        });
+
+        const rippleCheck = document.getElementById('rippleCheck');
+        const savedRipple = localStorage.getItem('vafnircut_ripple');
+        if (savedRipple !== null) rippleCheck.checked = (savedRipple === 'true');
+        rippleCheck.addEventListener('change', () => {
+            localStorage.setItem('vafnircut_ripple', rippleCheck.checked);
+        });
+
+        const trackCheckboxes = document.querySelectorAll('.track-ch');
+        const savedTracks = localStorage.getItem('vafnircut_tracks');
+        if (savedTracks) {
+            try {
+                const tracksArr = JSON.parse(savedTracks);
+                trackCheckboxes.forEach(cb => { cb.checked = tracksArr.includes(cb.value); });
+            } catch(e) {}
+        }
+        trackCheckboxes.forEach(cb => {
+            cb.addEventListener('change', () => {
+                const checkedVals = Array.from(trackCheckboxes).filter(c => c.checked).map(c => c.value);
+                localStorage.setItem('vafnircut_tracks', JSON.stringify(checkedVals));
+            });
+        });
+
+
+        // === [ КАРДИНАЛЬНО РАЗНЫЕ ТЕМЫ ] ===
+        const themes = [
+            { // 0: Matrix
+                '--bg-color': '#090c09', '--panel-bg': 'rgba(18, 24, 18, 0.85)', '--text-main': '#d5d5d5', '--text-highlight': '#ffffff', 
+                '--accent-blue': '#2ecc71', '--accent-hover': '#27ae60', '--border-color': '#1b2e1b', '--input-bg': '#0c120c',
+                '--header-glow': 'rgba(46, 204, 113, 0.45)', '--header-gradient': 'linear-gradient(90deg, #2ecc71, #ffffff, #a3e4d7, #ffffff, #2ecc71)',
+                '--panel-shadow': '0 4px 15px rgba(0,0,0,0.4)', '--glass-filter': 'blur(4px)', '--flare-display': 'block',
+                '--header-animation': 'pearlRainbow 4s linear infinite', '--btn-shadow-hover': '0 0 15px var(--header-glow)'
+            },
+            { // 1: Cyberpunk
+                '--bg-color': '#05020a', '--panel-bg': 'rgba(15, 5, 20, 0.75)', '--text-main': '#e0d5e5', '--text-highlight': '#ffffff', 
+                '--accent-blue': '#00ffff', '--accent-hover': '#ff00ff', '--border-color': '#ff00ff', '--input-bg': 'rgba(255, 0, 255, 0.05)',
+                '--header-glow': 'rgba(0, 255, 255, 0.8)', '--header-gradient': 'linear-gradient(90deg, #00ffff, #ffffff, #ff00ff, #ffffff, #00ffff)',
+                '--panel-shadow': '0 0 20px rgba(255,0,255,0.2)', '--glass-filter': 'blur(6px)', '--flare-display': 'block',
+                '--header-animation': 'pearlRainbow 2.5s linear infinite', '--btn-shadow-hover': '0 0 25px var(--header-glow)'
+            },
+            { // 2: Ocean
+                '--bg-color': '#010a15', '--panel-bg': 'rgba(0, 20, 40, 0.55)', '--text-main': '#c8d5df', '--text-highlight': '#ffffff', 
+                '--accent-blue': '#00d4ff', '--accent-hover': '#0099cc', '--border-color': '#005080', '--input-bg': 'rgba(0, 20, 40, 0.8)',
+                '--header-glow': 'rgba(0, 212, 255, 0.5)', '--header-gradient': 'linear-gradient(90deg, #00d4ff, #ffffff, #85e8f0, #ffffff, #00d4ff)',
+                '--panel-shadow': '0 8px 32px rgba(0,0,0,0.6)', '--glass-filter': 'blur(12px)', '--flare-display': 'block',
+                '--header-animation': 'pearlRainbow 6s linear infinite', '--btn-shadow-hover': '0 0 15px var(--header-glow)'
+            },
+            { // 3: Lava
+                '--bg-color': '#0a0301', '--panel-bg': 'rgba(20, 5, 2, 0.9)', '--text-main': '#dfcfc8', '--text-highlight': '#ffffff', 
+                '--accent-blue': '#ff4500', '--accent-hover': '#cc3700', '--border-color': '#661a00', '--input-bg': '#140502',
+                '--header-glow': 'rgba(255, 69, 0, 0.6)', '--header-gradient': 'linear-gradient(90deg, #ff4500, #ffeb3b, #ffcc80, #ffeb3b, #ff4500)',
+                '--panel-shadow': '0 10px 20px rgba(0,0,0,0.8)', '--glass-filter': 'none', '--flare-display': 'block',
+                '--header-animation': 'pearlRainbow 2s linear infinite', '--btn-shadow-hover': '0 0 25px var(--header-glow)'
+            },
+            { // 4: Space
+                '--bg-color': '#030108', '--panel-bg': 'rgba(10, 5, 20, 0.4)', '--text-main': '#d0c8df', '--text-highlight': '#ffffff', 
+                '--accent-blue': '#b026ff', '--accent-hover': '#881bcc', '--border-color': '#4a1073', '--input-bg': 'rgba(5, 2, 10, 0.8)',
+                '--header-glow': 'rgba(176, 38, 255, 0.5)', '--header-gradient': 'linear-gradient(90deg, #b026ff, #e040fb, #ea80fc, #e040fb, #b026ff)',
+                '--panel-shadow': 'none', '--glass-filter': 'blur(2px)', '--flare-display': 'block',
+                '--header-animation': 'pearlRainbow 5s linear infinite', '--btn-shadow-hover': '0 0 15px var(--header-glow)'
+            },
+            { // 5: Winter
+                '--bg-color': '#05131f', '--panel-bg': 'rgba(255, 255, 255, 0.12)', '--text-main': '#e0f7fa', '--text-highlight': '#ffffff', 
+                '--accent-blue': '#00e5ff', '--accent-hover': '#00b8cc', '--border-color': 'rgba(255,255,255,0.25)', '--input-bg': 'rgba(0, 0, 0, 0.3)',
+                '--header-glow': 'rgba(0, 229, 255, 0.5)', '--header-gradient': 'linear-gradient(90deg, #00e5ff, #ffffff, #b2ebf2, #ffffff, #00e5ff)',
+                '--panel-shadow': '0 0 20px rgba(255,255,255,0.05)', '--glass-filter': 'blur(15px)', '--flare-display': 'block',
+                '--header-animation': 'pearlRainbow 4s linear infinite', '--btn-shadow-hover': '0 0 20px var(--header-glow)'
+            },
+            { // 6: Gold
+                '--bg-color': '#0a0802', '--panel-bg': 'rgba(30, 25, 15, 0.85)', '--text-main': '#dfd9c8', '--text-highlight': '#ffffff', 
+                '--accent-blue': '#ffd700', '--accent-hover': '#ffc107', '--border-color': '#806600', '--input-bg': '#120f03',
+                '--header-glow': 'rgba(255, 215, 0, 0.5)', '--header-gradient': 'linear-gradient(90deg, #ffd700, #fff8e1, #ffe082, #fff8e1, #ffd700)',
+                '--panel-shadow': '0 5px 25px rgba(0,0,0,0.6)', '--glass-filter': 'blur(6px)', '--flare-display': 'block',
+                '--header-animation': 'pearlRainbow 5s linear infinite', '--btn-shadow-hover': '0 0 15px var(--header-glow)'
+            },
+            { // 7: PREMIERE PRO CLASSIC
+                '--bg-color': '#232323', '--panel-bg': '#2d2d2d', '--text-main': '#b3b3b3', '--text-highlight': '#e6e6e6', 
+                '--accent-blue': '#2a82da', '--accent-hover': '#1e68b5', '--border-color': '#444444', '--input-bg': '#1e1e1e',
+                '--header-glow': 'transparent', '--header-gradient': 'linear-gradient(90deg, #e6e6e6, #e6e6e6)',
+                '--panel-shadow': '0 2px 5px rgba(0,0,0,0.2)', '--glass-filter': 'none', '--flare-display': 'none',
+                '--header-animation': 'none', '--btn-shadow-hover': 'none'
+            }
+        ];
+
+        const themeNames = [
+            "Matrix", "Cyberpunk", "Ocean", "Lava", "Space", "Winter", "Gold", "Premiere Pro Classic"
+        ];
+
+        // По умолчанию ставим 7 (Premiere)
+        let storedTheme = localStorage.getItem('vafnircut_theme');
+        let currentThemeIndex = (storedTheme !== null && !isNaN(storedTheme)) ? parseInt(storedTheme) : 7;
+        if (currentThemeIndex >= themes.length) currentThemeIndex = 7;
+
+        let matrixColor = themes[currentThemeIndex]['--accent-blue'];
+        const canvas = document.getElementById('bgCanvas');
+        const ctx = canvas.getContext('2d');
+        let width, height;
+
+        function applyTheme(index) {
+            const theme = themes[index];
+            for (let key in theme) { document.documentElement.style.setProperty(key, theme[key]); }
+            matrixColor = theme['--accent-blue'];
+            ctx.clearRect(0, 0, canvas.width, canvas.height); 
+            
+            if (index === 7) document.body.classList.add('theme-pro');
+            else document.body.classList.remove('theme-pro');
+
+            document.getElementById('themeNameDisplay').textContent = "STYLE: " + themeNames[index];
+        }
+
+        document.getElementById('headerBtn').addEventListener('click', () => {
+            currentThemeIndex = (currentThemeIndex + 1) % themes.length;
+            localStorage.setItem('vafnircut_theme', currentThemeIndex);
+            applyTheme(currentThemeIndex);
+        });
+
+        // --- ДВИЖОК АНИМАЦИЙ (УНИКАЛЬНЫЙ ДЛЯ КАЖДОЙ ТЕМЫ) ---
+        let drops = [], bubbles = [], embers = [], stars = [], snow = [], bokeh = [];
+        const chars = "ｱｲｳｴｵｶｷｸｹｺｻｼｽｾｿﾀﾁﾂﾃﾄﾅﾆﾇﾈﾉﾊﾋﾌﾍﾎﾏﾐﾑﾒﾓﾔﾕﾖﾗﾘﾙﾚﾛﾜﾝ0123456789".split("");
+
+        function initCanvas() {
+            width = canvas.width = window.innerWidth;
+            height = canvas.height = window.innerHeight;
+            
+            // 0: Matrix
+            let columns = Math.floor(width / 12); drops = [];
+            for(let x = 0; x < columns; x++) drops[x] = Math.random() * height;
+            
+            // 2: Ocean (Пузырьки)
+            bubbles = []; 
+            for(let i=0; i<50; i++) bubbles.push({ x: Math.random()*width, y: Math.random()*height, size: Math.random()*4 + 1.5, speedY: Math.random()*1 + 0.3, wobble: Math.random()*Math.PI*2, wobbleSpeed: Math.random()*0.02 + 0.01 });
+            
+            // 3: Lava (Искры) - Медленнее
+            embers = []; 
+            for(let i=0; i<80; i++) embers.push({ x: Math.random()*width, y: Math.random()*height, size: Math.random()*3+1, speedY: Math.random()*1.5 + 0.4, speedX: (Math.random()-0.5)*1.5, life: Math.random() });
+            
+            // 4: Space (Звезды) - На 20% медленнее
+            stars = []; 
+            for(let i=0; i<120; i++) stars.push({ x: Math.random()*width, y: Math.random()*height, size: Math.random()*1.5 + 0.5, speed: (Math.random()*0.5 + 0.1) * 0.8, alpha: Math.random() });
+            
+            // 5: Winter (Снег)
+            snow = []; 
+            for(let i=0; i<100; i++) snow.push({ x: Math.random()*width, y: Math.random()*height, size: Math.random()*3 + 1, speedY: Math.random()*1.5 + 0.5, speedX: (Math.random()-0.5), opacity: Math.random()*0.6 + 0.2 });
+            
+            // 6: Gold (Боке)
+            bokeh = []; 
+            for(let i=0; i<25; i++) bokeh.push({ x: Math.random()*width, y: Math.random()*height, size: Math.random()*20 + 10, vx: (Math.random()-0.5)*0.5, vy: (Math.random()-0.5)*0.5, alpha: Math.random()*Math.PI*2 });
+        }
+        window.addEventListener('resize', initCanvas);
+        initCanvas();
+        applyTheme(currentThemeIndex);
+
+        let lastMatrixTime = 0;
+
+        function renderLoop(time) {
+            requestAnimationFrame(renderLoop);
+
+            if (currentThemeIndex === 7) { 
+                ctx.clearRect(0, 0, width, height); return; 
+            }
+
+            if (currentThemeIndex === 0) { // MATRIX
+                if (time - lastMatrixTime > 50) {
+                    ctx.fillStyle = "rgba(0, 0, 0, 0.1)"; ctx.fillRect(0, 0, width, height);
+                    ctx.fillStyle = matrixColor; ctx.font = "12px monospace";
+                    for(let i = 0; i < drops.length; i++) {
+                        const text = chars[Math.floor(Math.random() * chars.length)];
+                        ctx.fillText(text, i * 12, drops[i] * 12);
+                        if(drops[i] * 12 > height && Math.random() > 0.975) drops[i] = 0;
+                        drops[i]++;
+                    }
+                    lastMatrixTime = time;
+                }
+            } 
+            else if (currentThemeIndex === 1) { // CYBERPUNK (Synthwave Сетка)
+                ctx.fillStyle = '#05020a'; ctx.fillRect(0, 0, width, height);
+                let vpX = width / 2, vpY = height * 0.45;
+                
+                // Ретро солнце
+                let grd = ctx.createLinearGradient(0, vpY - 120, 0, vpY);
+                grd.addColorStop(0, '#ff00ff'); grd.addColorStop(1, '#ffaa00');
+                ctx.fillStyle = grd;
+                ctx.beginPath(); ctx.arc(vpX, vpY, 100, Math.PI, 0); ctx.fill();
+
+                // Неоновая сетка
+                ctx.strokeStyle = 'rgba(0, 255, 255, 0.8)'; ctx.lineWidth = 1;
+                ctx.beginPath();
+                for(let i = -20; i <= 20; i++) { ctx.moveTo(vpX, vpY); ctx.lineTo(vpX + i * 80, height); }
+                let z = (Date.now() / 25) % 20;
+                for(let i = 0; i < 30; i++) {
+                    let y = vpY + Math.pow(i + (z/20), 2) * 1.5;
+                    if(y < height) { ctx.moveTo(0, y); ctx.lineTo(width, y); }
+                }
+                ctx.stroke();
+            } 
+            else if (currentThemeIndex === 2) { // OCEAN (Продвинутый)
+                let t = Date.now() * 0.0005;
+                
+                // Глубоководный градиент
+                let bgGrd = ctx.createLinearGradient(0, 0, 0, height);
+                bgGrd.addColorStop(0, '#021020'); bgGrd.addColorStop(1, '#000408');
+                ctx.fillStyle = bgGrd; ctx.fillRect(0, 0, width, height);
+                
+                // Лучи света (качаются)
+                ctx.fillStyle = 'rgba(0, 212, 255, 0.03)';
+                for(let i=0; i<4; i++) {
+                    let topX = width*0.1 + i*width*0.25 + Math.sin(t + i)*100;
+                    let bottomX = topX - 100 + Math.sin(t*0.8 + i)*150;
+                    ctx.beginPath(); 
+                    ctx.moveTo(topX, 0); ctx.lineTo(topX+80, 0); 
+                    ctx.lineTo(bottomX+200, height); ctx.lineTo(bottomX, height); 
+                    ctx.fill();
+                }
+                
+                // Пузыри
+                ctx.strokeStyle = 'rgba(255,255,255,0.4)'; ctx.lineWidth = 1;
+                bubbles.forEach(b => {
+                    b.y -= b.speedY; 
+                    b.wobble += b.wobbleSpeed; 
+                    b.x += Math.sin(b.wobble)*0.8;
+                    if(b.y < -20) { b.y = height+20; b.x = Math.random()*width; }
+                    
+                    ctx.beginPath(); ctx.arc(b.x, b.y, b.size, 0, Math.PI*2); ctx.stroke();
+                    ctx.fillStyle = 'rgba(255,255,255,0.05)'; ctx.fill();
+                    ctx.beginPath(); ctx.arc(b.x - b.size*0.3, b.y - b.size*0.3, b.size*0.2, 0, Math.PI*2); 
+                    ctx.fillStyle='rgba(255,255,255,0.6)'; ctx.fill(); // Блик
+                });
+            }
+            else if (currentThemeIndex === 3) { // LAVA
+                ctx.fillStyle = '#0a0301'; ctx.fillRect(0, 0, width, height);
+                // Жар снизу
+                let heat = ctx.createLinearGradient(0, height, 0, height - 150);
+                heat.addColorStop(0, 'rgba(255, 69, 0, 0.2)'); heat.addColorStop(1, 'transparent');
+                ctx.fillStyle = heat; ctx.fillRect(0, 0, width, height);
+                
+                embers.forEach(e => {
+                    e.y -= e.speedY; e.x += e.speedX; e.life -= 0.003; // Медленное затухание
+                    if(e.y < -10 || e.life <= 0) { e.y = height + 10; e.x = Math.random()*width; e.life = 1; }
+                    ctx.globalAlpha = Math.max(0, e.life); ctx.fillStyle = '#ffcc80'; 
+                    ctx.shadowBlur = 10; ctx.shadowColor = '#ff4500';
+                    ctx.beginPath(); ctx.arc(e.x, e.y, e.size, 0, Math.PI*2); ctx.fill();
+                });
+                ctx.globalAlpha = 1.0; ctx.shadowBlur = 0;
+            }
+            else if (currentThemeIndex === 4) { // SPACE
+                ctx.clearRect(0, 0, width, height); ctx.fillStyle = '#ffffff';
+                stars.forEach(s => {
+                    s.x -= s.speed; s.alpha += (Math.random() - 0.5) * 0.1;
+                    if(s.alpha > 1) s.alpha = 1; if(s.alpha < 0.2) s.alpha = 0.2;
+                    if(s.x < -10) { s.x = width + 10; s.y = Math.random() * height; }
+                    ctx.globalAlpha = s.alpha; ctx.beginPath(); ctx.arc(s.x, s.y, s.size, 0, Math.PI*2); ctx.fill();
+                }); ctx.globalAlpha = 1.0;
+            }
+            else if (currentThemeIndex === 5) { // WINTER
+                ctx.fillStyle = '#05131f'; ctx.fillRect(0, 0, width, height);
+                let wind = Math.sin(Date.now()*0.001) * 1.5;
+                ctx.fillStyle = '#ffffff';
+                snow.forEach(s => {
+                    s.y += s.speedY; s.x += s.speedX + wind;
+                    if(s.y > height+10) { s.y = -10; s.x = Math.random()*width; }
+                    if(s.x > width+10) s.x = -10; else if (s.x < -10) s.x = width+10;
+                    ctx.globalAlpha = s.opacity; ctx.beginPath(); ctx.arc(s.x, s.y, s.size, 0, Math.PI*2); ctx.fill();
+                }); ctx.globalAlpha = 1.0;
+            }
+            else if (currentThemeIndex === 6) { // GOLD
+                ctx.clearRect(0, 0, width, height);
+                bokeh.forEach(b => {
+                    b.x += b.vx; b.y += b.vy; b.alpha += 0.02;
+                    if(b.x < -50 || b.x > width + 50) b.vx *= -1; if(b.y < -50 || b.y > height + 50) b.vy *= -1;
+                    ctx.globalAlpha = (Math.sin(b.alpha) + 1) / 2 * 0.3; 
+                    ctx.fillStyle = '#ffd700'; ctx.beginPath(); ctx.arc(b.x, b.y, b.size, 0, Math.PI*2); ctx.fill();
+                }); ctx.globalAlpha = 1.0;
+            }
+        }
+        requestAnimationFrame(renderLoop);
+        
+        // ==========================================
+
+
         let csInterface;
         try {
             csInterface = new CSInterface();
-            window.addEventListener('load', () => { setTimeout(() => { csInterface.resizeContent(380, document.documentElement.scrollHeight); }, 50); });
+            window.addEventListener('load', () => { setTimeout(() => { csInterface.resizeContent(430, document.documentElement.scrollHeight); }, 50); });
 
             const { exec } = require('child_process');
             const path = require('path'); 
             const fs = require('fs');
+            const util = require('util');
+            const os = require('os'); 
+            const execPromise = util.promisify(exec); 
 
-            runBtn.addEventListener('click', () => {
+            document.getElementById('runBtn').addEventListener('click', async () => {
                 const checkedBoxes = document.querySelectorAll('.track-ch:checked');
-                let trackStringForJSX = "";
-                let editArgForCMD = "";
+                if (checkedBoxes.length === 0) { setStatus("Выберите хотя бы одну дорожку!", "#e27a7a"); return; }
                 
-                if (checkedBoxes.length > 0) {
-                    const tracks = Array.from(checkedBoxes).map(box => box.value);
-                    trackStringForJSX = tracks.join(','); 
-                    const threshold = thresholdSlider.value;
-                    if (tracks.length === 1) { editArgForCMD = `audio:stream=${tracks[0]},threshold=${threshold}%`; } 
-                    else { const streamQueries = tracks.map(t => `audio:stream=${t},threshold=${threshold}%`).join(' '); editArgForCMD = `"(or ${streamQueries})"`; }
-                } else {
-                    statusDiv.innerHTML = "<span style='color: #e27a7a;'>Выберите хотя бы одну дорожку!</span>"; return;
-                }
-
+                const tracks = Array.from(checkedBoxes).map(box => box.value);
+                const threshold = thresholdSlider.value;
                 const margin = marginSlider.value;
-                const doRipple = rippleCheck.checked;
+                const doRipple = document.getElementById('rippleCheck').checked;
 
-                statusDiv.innerHTML = "<span style='color: var(--text-main);'>Чтение метаданных...</span>";
+                setStatus('statusReading', 'var(--text-main)');
 
-                csInterface.evalScript('getActiveClipData()', function(result) {
-                    if (result.startsWith("ERROR")) { statusDiv.innerHTML = `<span style='color: #e27a7a;'>${result}</span>`; return; }
+                csInterface.evalScript('getActiveClipData()', async function(result) {
+                    if (result.startsWith("ERROR") || result === "EvalScript error.") { 
+                        statusDiv.innerHTML = `<span style='color: #e27a7a;'>Ошибка JSX:<br>${result}</span>`; return; 
+                    }
                     
                     const parts = result.split('|||');
                     const filePath = parts[0];
-
-                    statusDiv.innerHTML = `<span style='color: var(--accent-blue);'>Нейросеть слушает тишину...</span>`;
-
+                    const clipOffset = parseFloat(parts[1]); 
                     const parsedPath = path.parse(filePath);
-                    const newSeqName = parsedPath.name + "_Cut";
-                    const safeSeqName = newSeqName.replace(/"/g, '\\"');
-                    
-                    const xmlFilePath = path.join(parsedPath.dir, 'CUT_cache.xml');
 
-                    const command = `auto-editor "${filePath}" --export premiere --edit ${editArgForCMD} --margin ${margin}sec -o "${xmlFilePath}"`;
-
-                    exec(command, (error, stdout, stderr) => {
-                        if (error) { statusDiv.innerHTML = `<span style='color: #e27a7a;'>Системная ошибка:<br>${error.message}</span>`; return; }
-                        
-                        try {
-                            let xmlData = fs.readFileSync(xmlFilePath, 'utf8');
-
-                            xmlData = xmlData.replace(/<name>Auto-Editor Media Group<\/name>/g, "<name>Media</name>");
-                            xmlData = xmlData.replace(/<name>Auto-Editor<\/name>/g, "<name>Cache</name>");
+                    try {
+                        if (doRipple) {
+                            // --- РЕЖИМ 1: RIPPLE DELETE ---
+                            setStatus('statusListening', 'var(--accent-blue)');
+                            let editArgForCMD = tracks.length === 1 ? `audio:stream=${tracks[0]},threshold=${threshold}%` : `"(or ${tracks.map(t => `audio:stream=${t},threshold=${threshold}%`).join(' ')})"`;
+                            const xmlFilePath = path.join(parsedPath.dir, 'VafnirCut_Math_Ripple.xml'); 
                             
-                            xmlData = xmlData.replace(/<sequence[^>]*>([\s\S]*?)<\/sequence>/i, function(match, inner) {
-                                return match.replace(inner, inner.replace(/<name>[^<]*<\/name>/i, `<name>${newSeqName}</name>`));
-                            });
+                            await execPromise(`auto-editor "${filePath}" --export premiere --edit ${editArgForCMD} --margin ${margin}sec -o "${xmlFilePath}"`);
+                            
+                            setStatus('statusCutting', 'var(--text-highlight)');
+                            let gaps = parseGapsFromXml(xmlFilePath);
+                            try { fs.unlinkSync(xmlFilePath); } catch(err) {}
 
-                            if (!doRipple) {
-                                statusDiv.innerHTML = "<span style='color: var(--text-main);'>Взламываю XML (создаю пустоты)...</span>";
+                            const gapsJson = JSON.stringify(gaps);
+                            await runJSX(`liveCutRipple('${gapsJson}', ${clipOffset})`);
+                            setStatus('statusSuccess', '#55a868'); 
+
+                        } else {
+                            // --- РЕЖИМ 2: СНАЙПЕРСКИЙ БОТ (15ms / F8) ---
+                            let allTrackGaps = {};
+                            
+                            for (let track of tracks) {
+                                statusDiv.innerHTML = `<span style='color: var(--accent-blue);'>Слушаем канал A${parseInt(track)+1}...</span>`;
+                                const xmlFilePath = path.join(parsedPath.dir, `VafnirCut_Math_A${track}.xml`); 
+                                await execPromise(`auto-editor "${filePath}" --export premiere --edit "audio:stream=${track},threshold=${threshold}%" --margin ${margin}sec -o "${xmlFilePath}"`);
+                                allTrackGaps[track] = parseGapsFromXml(xmlFilePath);
+                                try { fs.unlinkSync(xmlFilePath); } catch(err) {}
+                            }
+
+                            setStatus('statusCutting', '#e74c3c'); 
+                            
+                            const vbsPath = path.join(os.tmpdir(), 'vafnir_bot.vbs');
+                            const vbsCode = `
+Set WshShell = WScript.CreateObject("WScript.Shell")
+WScript.Sleep 15
+WshShell.AppActivate "Adobe Premiere Pro"
+WScript.Sleep 15
+WshShell.SendKeys "{F8}"
+WScript.Sleep 15
+WshShell.SendKeys "{F7}"
+`;
+                            fs.writeFileSync(vbsPath, vbsCode.trim());
+
+                            for (let track of tracks) {
+                                statusDiv.innerHTML = `<span style='color: #e74c3c;'>Бот режет A${parseInt(track)+1} (Не трогайте мышь!)</span>`;
                                 
-                                let maxOut = 0;
-                                let outMatches = [...xmlData.matchAll(/<out>(\d+)<\/out>/g)];
-                                outMatches.forEach(m => {
-                                    let val = parseInt(m[1]);
-                                    if (val > maxOut) maxOut = val;
-                                });
+                                await runJSX(`setTargetsForLift(${track})`);
+                                await new Promise(r => setTimeout(r, 30)); 
 
-                                xmlData = xmlData.replace(/<clipitem[\s\S]*?>([\s\S]*?)<\/clipitem>/g, function(match, innerContent) {
-                                    let inMatch = innerContent.match(/<in>(-?\d+)<\/in>/);
-                                    let outMatch = innerContent.match(/<out>(-?\d+)<\/out>/);
-                                    if (inMatch && outMatch) {
-                                        let inVal = inMatch[1]; let outVal = outMatch[1];
-                                        let newInner = innerContent.replace(/<start>-?\d+<\/start>/, `<start>${inVal}</start>`)
-                                                                   .replace(/<end>-?\d+<\/end>/, `<end>${outVal}</end>`);
-                                        return match.replace(innerContent, newInner);
-                                    }
-                                    return match;
-                                });
+                                let gaps = allTrackGaps[track];
+                                for (let i = gaps.length - 1; i >= 0; i--) {
+                                    let start = parseFloat(clipOffset) + parseFloat(gaps[i].start);
+                                    let end = parseFloat(clipOffset) + parseFloat(gaps[i].end);
 
-                                let videoBlockRegex = /(<video>[\s\S]*?<track>)([\s\S]*?)(<\/track>[\s\S]*?<\/video>)/;
-                                let match = xmlData.match(videoBlockRegex);
-                                if (match) {
-                                    let prefix = match[1];
-                                    let clips = match[2];
-                                    let suffix = match[3];
-                                    let firstClip = clips.match(/<clipitem[\s\S]*?<\/clipitem>/);
-                                    if (firstClip) {
-                                        let wholeClip = firstClip[0];
-                                        wholeClip = wholeClip.replace(/<in>-?\d+<\/in>/, "<in>0</in>")
-                                                             .replace(/<start>-?\d+<\/start>/, "<start>0</start>")
-                                                             .replace(/<out>-?\d+<\/out>/, `<out>${maxOut}</out>`)
-                                                             .replace(/<end>-?\d+<\/end>/, `<end>${maxOut}</end>`);
-                                        xmlData = xmlData.replace(videoBlockRegex, prefix + "\n" + wholeClip + "\n" + suffix);
-                                    }
+                                    await runJSX(`setInOutAndDeselect(${start}, ${end})`);
+                                    await new Promise(r => setTimeout(r, 15)); 
+                                    
+                                    await execPromise(`cscript //nologo "${vbsPath}"`);
+                                    await new Promise(r => setTimeout(r, 15)); 
                                 }
                             }
-                            
-                            fs.writeFileSync(xmlFilePath, xmlData); 
-                            
-                            statusDiv.innerHTML = "<span style='color: var(--accent-blue);'>Отправляю в Premiere...</span>";
-                            const escapedPath = xmlFilePath.replace(/\\/g, '\\\\');
-                            
-                            csInterface.evalScript(`importAndCleanXML("${escapedPath}", "${trackStringForJSX}")`, function(res) {
-                                if (res === "SUCCESS") {
-                                     const moveScript = `(function(){
-                                         var proj = app.project; if (!proj) return "Error";
-                                         var cutBin = null;
-                                         
-                                         for (var i = 0; i < proj.rootItem.children.numItems; i++) {
-                                             if (proj.rootItem.children[i].name === "CUT") { cutBin = proj.rootItem.children[i]; break; }
-                                         }
-                                         if (!cutBin) proj.rootItem.createBin("CUT");
-                                         
-                                         function findAndMove(node) {
-                                             for (var i = 0; i < node.children.numItems; i++) {
-                                                 var item = node.children[i];
-                                                 if (item.name === "${safeSeqName}") { item.moveBin(cutBin); return true; }
-                                                 if (item.type === ProjectItemType.BIN && findAndMove(item)) return true;
-                                             }
-                                             return false;
-                                         }
-                                         findAndMove(proj.rootItem);
-                                         return "SUCCESS";
-                                     })()`;
 
-                                     csInterface.evalScript(moveScript, function(moveRes) {
-                                          statusDiv.innerHTML = `<span style='color: #55a868;'>Успех! Секвенция в папке CUT.</span>`;
-                                     });
-                                } else {
-                                     statusDiv.innerHTML = `<span style='color: #e27a7a;'>${res}</span>`;
-                                }
-                            });
-
-                        } catch(e) { statusDiv.innerHTML = `<span style='color: #e27a7a;'>Ошибка XML хакера:<br>${e.message}</span>`; }
-                    });
+                            await runJSX(`resetAfterLift(${clipOffset})`);
+                            try { fs.unlinkSync(vbsPath); } catch(e) {}
+                            setStatus('statusSuccess', '#55a868');
+                        }
+                    } catch (err) {
+                        statusDiv.innerHTML = `<span style='color: #e27a7a;'>Системная ошибка:<br>${err.message}</span>`;
+                    }
                 });
             });
-        } catch (err) { statusDiv.innerHTML = `<span style='color: #e27a7a;'>Критическая ошибка Node.js:<br>${err.message}</span>`; }
+
+            function parseGapsFromXml(xmlFilePath) {
+                let xmlData = fs.readFileSync(xmlFilePath, 'utf8');
+                let timebaseMatch = xmlData.match(/<timebase>(\d+)<\/timebase>/);
+                let timebase = timebaseMatch ? parseInt(timebaseMatch[1]) : 60;
+                let videoTrackMatch = xmlData.match(/<video>[\s\S]*?<track>([\s\S]*?)<\/track>/);
+                if (!videoTrackMatch) return [];
+                let clipitems = [...videoTrackMatch[1].matchAll(/<clipitem[\s\S]*?<\/clipitem>/g)];
+                let keptChunks = [];
+                for (let m of clipitems) {
+                    let inMatch = m[0].match(/<in>(\d+)<\/in>/);
+                    let outMatch = m[0].match(/<out>(\d+)<\/out>/);
+                    if (inMatch && outMatch) keptChunks.push({ inFrame: parseInt(inMatch[1]), outFrame: parseInt(outMatch[1]) });
+                }
+                let gaps = [];
+                if (keptChunks.length > 0 && keptChunks[0].inFrame > 0) gaps.push({ start: 0, end: keptChunks[0].inFrame / timebase });
+                for (let i = 0; i < keptChunks.length - 1; i++) gaps.push({ start: keptChunks[i].outFrame / timebase, end: keptChunks[i+1].inFrame / timebase });
+                return gaps;
+            }
+
+            function runJSX(code) {
+                return new Promise(resolve => {
+                    csInterface.evalScript(code, function(res) { resolve(res); });
+                });
+            }
+
+        } catch (err) { statusDiv.innerHTML = `<span style='color: #e27a7a;'>Ошибка Node.js:<br>${err.message}</span>`; }
     </script>
 </body>
 </html>
