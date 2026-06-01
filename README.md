@@ -4,21 +4,23 @@
 
 <div align="center">
   
-  <img src="interface.png" alt="VafnirCut Interface" width="450">
+  <img src="Interface.png" alt="VafnirCut Interface" width="450">
   
-  <p><em>A stylish multi-channel auto-editor with 6 custom themes</em></p>
+  <p><em>A powerful multi-channel auto-editor with 8 stunning themes and live timeline cutting.</em></p>
 </div>
 
-**VafnirCut** is a free and "stylish" plugin for Adobe Premiere Pro that automatically cuts out silence and heavy breaths from your video and audio tracks using neural networks (powered by [auto-editor](https://github.com/WyattBlue/auto-editor)).
+**VafnirCut** is a free and stylish extension for Adobe Premiere Pro that automatically cuts out silence and heavy breaths from your video and audio tracks using neural networks (powered by [auto-editor](https://github.com/WyattBlue/auto-editor)).
 
-No more spending hours on rough cuts — the plugin does it for you in one click!
+No more spending hours on rough cuts or dealing with messy XML imports — the **VafnirCut Sniper Bot** does it live directly on your timeline in one click!
 
 ## ✨ Key Features
 
 * 🎙️ **Multi-channel analysis:** Select any audio tracks (A1-A5) to detect silence.
-* 🎛️ **Fine-tuning:** Sliders for Margin and Threshold.
-* 🎨 **Custom Design:** 6 cool themes (Forest, Ice, Lava, Clouds, Water, Earth) with interactive geysers and 1 strict (Pro) theme for minimalists.
-* ⚡ **Full Automation:** The installer will automatically download the required version of Python and configure the neural network for you.
+* 🎛️ **Fine-tuning:** Precise sliders for Margin, Noise Threshold, and a Ripple Delete toggle.
+* ⚡ **Live "Sniper Bot" Cutting:** Watch the plugin magically place In/Out points and delete silence right on your active timeline in real-time.
+* 🎨 **Custom Design:** 7 animated themes with custom canvas engines (Matrix, Cyberpunk, Ocean, Lava, Space, Winter, Gold) and 1 strict *Premiere Pro Classic* theme for minimalists.
+* 💾 **Smart Memory:** The plugin remembers all your sliders, checkboxes, UI language, and selected theme even after a restart.
+* 🤖 **Full Automation:** The `.exe` installer will automatically download Python, configure the neural network, and place the plugin in your system folders.
 
 ## 📥 How to Install (Windows)
 
@@ -28,17 +30,19 @@ No more spending hours on rough cuts — the plugin does it for you in one click
 > **⚠️ IMPORTANT:** Since the installer automatically configures Adobe system folders and silently installs Python, *Windows Defender or your antivirus may show a warning*. This is totally normal! Click **"More info" -> "Run anyway"**. The source code is open and available in this repository.
 
 3. Wait for the black installation window to close.
-4. Restart Premiere Pro.
-5. If Python was installed on your system for the first time, a PC reboot is recommended.
+4. **CRITICAL STEP FOR LIVE CUTTING:** Open Premiere Pro and go to `Edit` -> `Keyboard Shortcuts`.
+   * Search for **Timeline** (`Window -> Timeline`) and assign it to the **F8** key.
+   * Search for **Lift** and assign it to the **F7** key.
+5. Restart Premiere Pro.
 
 ## 🚀 How to Use
 
 1. Open Premiere Pro.
 2. In the top menu, navigate to: `Window` -> `Extensions` -> `VafnirCut`.
 3. **Select the clip** on the timeline that you want to process.
-4. Adjust the threshold and select the tracks to analyze in the plugin (default settings are usually good to go).
-5. Click **"ОБРЕЗАТЬ ТАЙМЛАЙН"** (CUT TIMELINE).
-6. Done! The new edited sequence will appear in the `CUT` folder in your project panel.
+4. Adjust the threshold and select the tracks to analyze in the plugin.
+5. Click **"CUT TIMELINE"**.
+6. **Hands off the mouse!** The plugin's bot will take control and automatically cut your timeline in seconds.
 
 ## ☕ Support the Author
 
