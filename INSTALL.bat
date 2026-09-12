@@ -46,11 +46,11 @@ echo [3/3] Installing auto-editor package...
 set "PATH=%PATH%;%ProgramFiles%\Python311\;%ProgramFiles%\Python311\Scripts\"
 
 if exist "%ProgramFiles%\Python311\python.exe" (
-    "%ProgramFiles%\Python311\python.exe" -m pip install --upgrade pip
-    "%ProgramFiles%\Python311\python.exe" -m pip install auto-editor
+    "%ProgramFiles%\Python311\python.exe" -m pip install --upgrade pip -i https://pypi.org/simple/
+    "%ProgramFiles%\Python311\python.exe" -m pip install auto-editor -i https://pypi.org/simple/ --trusted-host pypi.org --trusted-host files.pythonhosted.org
 ) else (
-    python -m pip install --upgrade pip
-    python -m pip install auto-editor
+    python -m pip install --upgrade pip -i https://pypi.org/simple/
+    python -m pip install auto-editor -i https://pypi.org/simple/ --trusted-host pypi.org --trusted-host files.pythonhosted.org
 )
 
 echo.
